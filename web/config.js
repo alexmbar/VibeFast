@@ -107,7 +107,7 @@ const config = {
       { label: "Docs", href: "/docs" },
     ],
     hero: {
-      eyebrow: "Curso Vibecoding · Remotto × Startup Chihuahua",
+      eyebrow: "Curso",
       title: "De 0 a producto AI-native en 11 semanas.",
       subtitle:
         "VibeFast es la plantilla del curso: Next.js, Supabase, OpenAI y MCP cableados desde el día 1. Tú extiendes con prompts en Cursor.",
