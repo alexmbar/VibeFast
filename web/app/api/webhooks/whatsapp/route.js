@@ -44,6 +44,7 @@ export async function POST(request) {
     }
 
     // Parsear el gasto del mensaje
+    console.log('Llamando crearGastoDesdeWhatsApp...')
     const resultado = await crearGastoDesdeWhatsApp(
       supabase,
       user.id,
@@ -52,7 +53,10 @@ export async function POST(request) {
       mediaContentType
     )
 
+    console.log('Resultado:', resultado)
+
     if (!resultado.success) {
+      console.log('Error en creación:', resultado.error)
       return respondToWhatsApp(from, `❌ Error: ${resultado.error}`)
     }
 
@@ -72,9 +76,12 @@ export async function POST(request) {
 }
 
 async function respondToWhatsApp(to, message) {
+  console.log('respondToWhatsApp called:', { to, message })
   const accountSid = process.env.TWILIO_ACCOUNT_SID
   const authToken = process.env.TWILIO_AUTH_TOKEN
   const from = process.env.TWILIO_WHATSAPP_NUMBER
+
+  console.log('Twilio config:', { accountSid: accountSid ? 'OK' : 'MISSING', authToken: authToken ? 'OK' : 'MISSING', from })
 
   if (!accountSid || !authToken) {
     console.warn('Twilio credentials no configuradas')
