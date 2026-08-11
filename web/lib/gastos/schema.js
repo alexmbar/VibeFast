@@ -129,18 +129,3 @@ export function formatDate(date) {
   const day = String(d.getDate()).padStart(2, '0')
   return `${d.getFullYear()}-${month}-${day}`
 }
-
-// Obtener hora actual en formato HH:MM
-export function horaActual() {
-  const now = new Date()
-  const hours = String(now.getHours()).padStart(2, '0')
-  const minutes = String(now.getMinutes()).padStart(2, '0')
-  return `${hours}:${minutes}`
-}
-
-// Formatear hora para display (HH:MM)
-export function formatHora(hora) {
-  if (!hora) return '--:--'
-  if (typeof hora === 'string') return hora
-  return hora
-}
