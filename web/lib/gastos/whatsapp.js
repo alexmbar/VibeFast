@@ -60,6 +60,7 @@ export async function crearGastoDesdeWhatsApp(supabase, userId, texto, mediaUrl,
     }
 
     // Insertar en Supabase
+    console.log('Insertando gasto:', { userId, monto: gasto.monto, fecha: gasto.fecha, categoria: gasto.categoria })
     const { data, error } = await supabase
       .from('gastos')
       .insert({
@@ -74,10 +75,13 @@ export async function crearGastoDesdeWhatsApp(supabase, userId, texto, mediaUrl,
       .select()
       .single()
 
+    console.log('Insert result:', { data, error })
+
     if (error) {
+      console.error('Error insertando gasto:', error)
       return {
         success: false,
-        error: 'Error al guardar el gasto',
+        error: `Error al guardar el gasto: ${error.message}`,
       }
     }
 
