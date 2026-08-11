@@ -129,3 +129,20 @@ export function formatDate(date) {
   const day = String(d.getDate()).padStart(2, '0')
   return `${d.getFullYear()}-${month}-${day}`
 }
+
+// Extraer hora de timestamp created_at
+export function extractHora(createdAt) {
+  if (!createdAt) return horaActual()
+  const d = new Date(createdAt)
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  return `${hours}:${minutes}`
+}
+
+// Obtener hora actual en formato HH:MM
+export function horaActual() {
+  const now = new Date()
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  return `${hours}:${minutes}`
+}

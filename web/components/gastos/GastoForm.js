@@ -10,6 +10,8 @@ import {
   pesosTocentavos,
   centavosToPesos,
   formatDate,
+  extractHora,
+  horaActual,
 } from '@/lib/gastos/schema'
 
 export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
@@ -18,6 +20,7 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
   const [formData, setFormData] = useState({
     monto: initialData ? centavosToPesos(initialData.monto) : '',
     fecha: initialData ? formatDate(initialData.fecha) : '',
+    hora: initialData ? extractHora(initialData.created_at) : horaActual(),
     categoria: initialData?.categoria || '',
     tipo_pago: initialData?.tipo_pago || '',
     tienda: initialData?.tienda || '',
@@ -41,9 +44,14 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
     setErrors({})
 
     try {
+      // Crear timestamp con fecha y hora editadas
+      const [hours, minutes] = formData.hora.split(':').map(Number)
+      const createdAtDate = new Date(`${formData.fecha}T${formData.hora}:00Z`)
+
       const data = {
         monto: pesosTocentavos(formData.monto),
         fecha: formData.fecha,
+        created_at: createdAtDate.toISOString(),
         categoria: formData.categoria,
         tipo_pago: formData.tipo_pago,
         tienda: formData.tienda || null,
@@ -98,24 +106,39 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
           )}
         </div>
 
-        {/* Fecha */}
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-semibold">Fecha</span>
-          </label>
-          <input
-            type="date"
-            name="fecha"
-            value={formData.fecha}
-            onChange={handleChange}
-            required
-            className={`input input-bordered ${errors.fecha ? 'input-error' : ''}`}
-          />
-          {errors.fecha && (
+        {/* Fecha y Hora */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="form-control">
             <label className="label">
-              <span className="label-text-alt text-error">{errors.fecha}</span>
+              <span className="label-text font-semibold">Fecha</span>
             </label>
-          )}
+            <input
+              type="date"
+              name="fecha"
+              value={formData.fecha}
+              onChange={handleChange}
+              required
+              className={`input input-bordered ${errors.fecha ? 'input-error' : ''}`}
+            />
+            {errors.fecha && (
+              <label className="label">
+                <span className="label-text-alt text-error">{errors.fecha}</span>
+              </label>
+            )}
+          </div>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text font-semibold">Hora</span>
+            </label>
+            <input
+              type="time"
+              name="hora"
+              value={formData.hora}
+              onChange={handleChange}
+              className="input input-bordered"
+            />
+          </div>
         </div>
 
         {/* Categoría */}
