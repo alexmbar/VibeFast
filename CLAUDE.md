@@ -94,6 +94,7 @@ abierta: se agregan conforme se vayan encontrando.
 - Sin emojis en el código fuente, comentarios, mensajes de commit ni logs.
 - Nombres de variables, funciones y comentarios en español o inglés consistente
   con el resto del archivo (elige uno y dilo aquí si aplica).
+- No incluir autores.
 
 ## TODO
 
