@@ -96,6 +96,39 @@ abierta: se agregan conforme se vayan encontrando.
   con el resto del archivo (elige uno y dilo aquí si aplica).
 - No incluir autores.
 
+## Integración WhatsApp
+
+**Estado:** ✅ Captura automática de gastos funcional
+
+**Flujo:**
+1. Usuario envía mensaje a número WhatsApp: `+1 415 523 8886` (sandbox de Twilio)
+2. Webhook en `POST /api/webhooks/whatsapp` recibe el mensaje
+3. Se valida que el número está registrado en `profiles.phone`
+4. Se parsea el gasto:
+   - Texto simple: "500 oxxo" → extrae monto ($500), tienda (oxxo), categoría (supermercado)
+   - Foto/PDF: OpenAI Vision extrae datos del ticket
+5. Se inserta en `gastos` con validaciones de BD
+6. Gasto aparece inmediatamente en `/gastos`
+
+**Setup requerido:**
+- Teléfono del usuario debe estar en `profiles.phone` (formato: +52XXXXXXXXXX)
+- Variables de entorno en Vercel:
+  - `TWILIO_ACCOUNT_SID`
+  - `TWILIO_AUTH_TOKEN`
+  - `TWILIO_WHATSAPP_NUMBER`
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+
+**Limitación conocida:**
+- Respuestas automáticas a WhatsApp no funcionan en sandbox de Twilio
+- Requiere upgrade a WhatsApp Business Account para habilitar (no implementado)
+- Gastos se crean correctamente; el usuario ve confirmación en app al abrir `/gastos`
+
+**Archivos clave:**
+- `web/app/api/webhooks/whatsapp/route.js` — webhook de recepción
+- `web/lib/gastos/whatsapp.js` — parseo de texto/imagen y creación de gastos
+- `web/app/(app)/profile/page.js` — donde usuario agrega su teléfono
+
 ## TODO
 
 - Retiros en efectivo: definir cómo se registran (¿tipo de movimiento aparte,
