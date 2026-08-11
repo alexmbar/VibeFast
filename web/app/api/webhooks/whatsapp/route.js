@@ -32,10 +32,7 @@ export async function POST(request) {
       .single()
 
     if (!user) {
-      // Usuario no existe - podría crear invitación o responder que se registre
-      return NextResponse.json({
-        message: 'Usuario no registrado. Por favor, haz login en la app primero.',
-      })
+      return respondToWhatsApp(from, 'Por favor, inicia sesión en la app primero para capturar gastos por WhatsApp.')
     }
 
     // Parsear el gasto del mensaje
