@@ -21,7 +21,7 @@ export default async function AppLayout({ children }) {
     <div className="flex min-h-screen flex-col bg-base-200">
       <header className="sticky top-0 z-40 border-b border-base-200 bg-base-100">
         <div className="flex items-center justify-between px-4 py-3">
-          <Link href="/dashboard" className="flex items-center gap-2 font-bold">
+          <Link href="/gastos" className="flex items-center gap-2 font-bold">
             <Logo className="size-7" />
             {config.brand.logoText}
           </Link>
