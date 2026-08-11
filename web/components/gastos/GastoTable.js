@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { eliminarGasto } from '@/lib/gastos/client'
-import { CATEGORIA_LABELS, TIPO_PAGO_LABELS, formatMonto, formatDate } from '@/lib/gastos/schema'
+import { CATEGORIA_LABELS, TIPO_PAGO_LABELS, formatMonto, formatDate, formatHora } from '@/lib/gastos/schema'
 
 export default function GastoTable({ gastos, onDelete, isLoading }) {
   const [deleting, setDeleting] = useState(null)
@@ -55,7 +55,10 @@ export default function GastoTable({ gastos, onDelete, isLoading }) {
         <tbody>
           {gastos.map(gasto => (
             <tr key={gasto.id} className="hover">
-              <td className="font-mono">{formatDate(gasto.fecha)}</td>
+              <td className="font-mono text-sm">
+                <div>{formatDate(gasto.fecha)}</div>
+                <div className="text-xs text-gray-500">{formatHora(gasto.hora)}</div>
+              </td>
               <td className="text-sm">{gasto.tienda || '-'}</td>
               <td className="text-sm">{CATEGORIA_LABELS[gasto.categoria]}</td>
               <td className="text-sm">{TIPO_PAGO_LABELS[gasto.tipo_pago]}</td>

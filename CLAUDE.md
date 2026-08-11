@@ -131,6 +131,12 @@ abierta: se agregan conforme se vayan encontrando.
 
 ## TODO
 
+- Hora en gastos: registrar hora de captura (auto en WhatsApp/web), editable en webapp
+  - ✅ Agregar columna `hora` (TIME) a tabla gastos
+  - ✅ Capturar hora actual en webhook WhatsApp
+  - ✅ Capturar hora en formulario web
+  - ✅ Mostrar y editar hora en tabla y formulario
+
 - Retiros en efectivo: definir cómo se registran (¿tipo de movimiento aparte,
   o `tipo_pago = efectivo` con `categoria` especial?) para no contaminar los
   reportes de gasto real.

@@ -49,6 +49,14 @@ export async function crearGastoDesdeWhatsApp(supabase, userId, texto, mediaUrl,
       gasto.fecha = new Date().toISOString().split('T')[0]
     }
 
+    // Registrar hora actual si no viene en los datos
+    if (!gasto.hora) {
+      const now = new Date()
+      const hours = String(now.getHours()).padStart(2, '0')
+      const minutes = String(now.getMinutes()).padStart(2, '0')
+      gasto.hora = `${hours}:${minutes}`
+    }
+
     // Validar categoría
     if (!CATEGORIAS.includes(gasto.categoria)) {
       gasto.categoria = 'otros'
@@ -66,6 +74,7 @@ export async function crearGastoDesdeWhatsApp(supabase, userId, texto, mediaUrl,
         user_id: userId,
         monto: gasto.monto,
         fecha: gasto.fecha,
+        hora: gasto.hora,
         categoria: gasto.categoria,
         tipo_pago: gasto.tipo_pago,
         tienda: gasto.tienda || null,
