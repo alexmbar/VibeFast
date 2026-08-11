@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { crearGastoDesdeWhatsApp } from '@/lib/gastos/whatsapp'
 import { validateTwilioWebhook } from '@/lib/whatsapp/twilio'
 
@@ -29,7 +29,11 @@ export async function POST(request) {
     console.log('userPhone:', userPhone)
 
     // Obtener o crear usuario por teléfono
-    const supabase = await createClient()
+    // Usar Service Role Key para permisos de admin (saltear RLS)
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    )
     let { data: user, error: userError } = await supabase
       .from('profiles')
       .select('id')
