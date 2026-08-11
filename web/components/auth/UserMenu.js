@@ -33,7 +33,7 @@ export default function UserMenu({ user }) {
       >
         <li className="menu-title truncate">{user.email}</li>
         <li>
-          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/profile">Perfil</Link>
         </li>
         <li>
           <form action={signOut}>

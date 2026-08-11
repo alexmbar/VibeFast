@@ -56,6 +56,9 @@ el gasto del mes.
 - El formulario de crear/editar es **secundario**: el flujo principal es la
   captura por WhatsApp. Existe para corregir, así que prioriza que editar
   desde la lista sea cómodo por encima de que crear sea bonito.
+- El diseño visual se basa en las imágenes de referencia en `/design`. Antes
+  de construir o ajustar una pantalla, revisa esa carpeta por si hay una
+  imagen aplicable; el usuario irá agregando más ahí con el tiempo.
 
 ## Base de datos
 
@@ -111,3 +114,15 @@ Reporta qué archivos cambiaste y en qué URL pruebo el cambio.
 - Ingresos no recurrentes: ingresos puntuales (bonos, reembolsos, ventas,
   regalos) capturados manualmente con monto, fecha y una nota/categoría
   opcional.
+
+- Gastos recurrentes: mismo tipo de recurrencia que "ingresos recurrentes"
+  pero para gastos fijos (renta, suscripciones, servicios). Reusar el mismo
+  motor de recurrencia en vez de duplicarlo entre ingresos y gastos.
+
+- Apartados con rendimiento (estilo Nu): sección para crear "apartados" de
+  dinero separados del gasto corriente, con una tasa de interés configurable
+  que simule lo que se puede ganar, como referencia
+  https://nubank.com.mx/cuenta/rendimientos/. Falta definir si el interés se
+  calcula real (con periodicidad, capitalización) o es solo informativo/
+  proyectado, y cómo se relaciona con Cartera (ver ítem de retiros en
+  efectivo) si es que comparten saldo.
