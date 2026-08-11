@@ -27,7 +27,7 @@ export async function POST(request) {
     const supabase = await createClient()
     let { data: user } = await supabase
       .from('profiles')
-      .select('user_id')
+      .select('id')
       .eq('phone', userPhone)
       .single()
 
@@ -41,7 +41,7 @@ export async function POST(request) {
     // Parsear el gasto del mensaje
     const resultado = await crearGastoDesdeWhatsApp(
       supabase,
-      user.user_id,
+      user.id,
       body,
       mediaUrl,
       mediaContentType

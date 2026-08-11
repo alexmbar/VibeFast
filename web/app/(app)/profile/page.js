@@ -32,7 +32,7 @@ export default function ProfilePage() {
       setPhone(data.phone || '')
     } catch (err) {
       console.error('Error loading profile:', err)
-      setError('Error al cargar perfil')
+      setError(err.message ? `Error al cargar perfil: ${err.message}` : 'Error al cargar perfil')
     } finally {
       setLoading(false)
     }
@@ -77,6 +77,12 @@ export default function ProfilePage() {
       <h1 className="text-2xl font-bold mb-6">Mi Perfil</h1>
 
       <div className="card bg-base-100 shadow-md p-6 space-y-4">
+        {error && (
+          <div className="alert alert-error text-sm">
+            <span>{error}</span>
+          </div>
+        )}
+
         {profile && (
           <>
             <div className="form-control">
@@ -118,12 +124,6 @@ export default function ProfilePage() {
                 <span className="label-text-alt text-xs">Formato: +52 código de país + número</span>
               </label>
             </div>
-
-            {error && (
-              <div className="alert alert-error text-sm">
-                <span>{error}</span>
-              </div>
-            )}
 
             {success && (
               <div className="alert alert-success text-sm">
