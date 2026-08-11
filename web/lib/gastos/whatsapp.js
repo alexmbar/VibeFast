@@ -163,10 +163,10 @@ function parsearTexto(texto) {
   }
 
   // Buscar patrón: número + tienda
-  // Ej: "500 oxxo", "1500.50 starbucks", "$200 uber"
-  const matches = texto.match(/[\$]?\s*(\d+(?:\.\d{2})?)\s*(.+)?/i)
+  // Ej: "500 oxxo", "1500.50 starbucks", "$200 uber", "1,000 starbuks", "2,500.12 walmart"
+  const matches = texto.match(/[\$]?\s*(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)\s*(.+)?/i)
   if (matches) {
-    const pesos = parseFloat(matches[1])
+    const pesos = parseFloat(matches[1].replace(/,/g, ''))
     gasto.monto = Math.round(pesos * 100) // Convertir a centavos
 
     if (matches[2]) {
