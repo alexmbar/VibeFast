@@ -40,7 +40,8 @@ export async function POST(request) {
 
     if (!user) {
       console.log('Usuario no encontrado con phone:', userPhone)
-      return respondToWhatsApp(from, 'Por favor, inicia sesión en la app primero para capturar gastos por WhatsApp.')
+      await respondToWhatsApp(from, 'Por favor, inicia sesión en la app primero para capturar gastos por WhatsApp.')
+      return NextResponse.json({ success: false })
     }
 
     // Parsear el gasto del mensaje
@@ -57,15 +58,17 @@ export async function POST(request) {
 
     if (!resultado.success) {
       console.log('Error en creación:', resultado.error)
-      return respondToWhatsApp(from, `❌ Error: ${resultado.error}`)
+      await respondToWhatsApp(from, `❌ Error: ${resultado.error}`)
+      return NextResponse.json({ success: false })
     }
 
     // Responder al usuario
     const { gasto } = resultado
-    return respondToWhatsApp(
+    await respondToWhatsApp(
       from,
       `✅ Gasto registrado\n💰 $${(gasto.monto / 100).toFixed(2)}\n📍 ${gasto.tienda || 'Sin tienda'}\n📂 ${gasto.categoria}`
     )
+    return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error en webhook WhatsApp:', error)
     return NextResponse.json(
