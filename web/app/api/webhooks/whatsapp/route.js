@@ -5,28 +5,13 @@ import { validateTwilioWebhook } from '@/lib/whatsapp/twilio'
 
 export async function POST(request) {
   try {
-    console.log('Webhook WhatsApp recibido')
-
-    // TODO: Validar que viene de Twilio (temporalmente desactivado para debug)
-    // const isValid = await validateTwilioWebhook(request)
-    // if (!isValid) {
-    //   return NextResponse.json(
-    //     { message: 'Webhook inválido' },
-    //     { status: 401 }
-    //   )
-    // }
-
     const formData = await request.formData()
-    const from = formData.get('From') // whatsapp:+52XXXXXXXXXX
+    const from = formData.get('From')
     const body = formData.get('Body') || ''
     const mediaUrl = formData.get('MediaUrl0')
     const mediaContentType = formData.get('MediaContentType0')
 
-    console.log('From:', from, 'Body:', body)
-
-    // Extraer número de usuario (sin whatsapp: prefix)
     const userPhone = from.replace('whatsapp:', '')
-    console.log('userPhone:', userPhone)
 
     // Obtener o crear usuario por teléfono
     // Usar Service Role Key para permisos de admin (saltear RLS)
@@ -40,16 +25,11 @@ export async function POST(request) {
       .eq('phone', userPhone)
       .single()
 
-    console.log('User found:', user, 'Error:', userError)
-
     if (!user) {
-      console.log('Usuario no encontrado con phone:', userPhone)
       await respondToWhatsApp(from, 'Por favor, inicia sesión en la app primero para capturar gastos por WhatsApp.')
       return NextResponse.json({ success: false })
     }
 
-    // Parsear el gasto del mensaje
-    console.log('Llamando crearGastoDesdeWhatsApp...')
     const resultado = await crearGastoDesdeWhatsApp(
       supabase,
       user.id,
@@ -58,10 +38,7 @@ export async function POST(request) {
       mediaContentType
     )
 
-    console.log('Resultado:', resultado)
-
     if (!resultado.success) {
-      console.log('Error en creación:', resultado.error)
       await respondToWhatsApp(from, `❌ Error: ${resultado.error}`)
       return NextResponse.json({ success: false })
     }
@@ -83,39 +60,28 @@ export async function POST(request) {
 }
 
 async function respondToWhatsApp(to, message) {
-  console.log('respondToWhatsApp called:', { to, message })
   const accountSid = process.env.TWILIO_ACCOUNT_SID
   const authToken = process.env.TWILIO_AUTH_TOKEN
   const from = process.env.TWILIO_WHATSAPP_NUMBER
 
-  console.log('Twilio config:', { accountSid: accountSid ? 'OK' : 'MISSING', authToken: authToken ? 'OK' : 'MISSING', from })
-
   if (!accountSid || !authToken) {
-    console.warn('Twilio credentials no configuradas')
     return NextResponse.json({ success: true })
   }
 
   try {
     const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64')
-    const requestBody = new URLSearchParams({
-      From: from,
-      To: to,
-      Body: message,
-    }).toString()
-
-    console.log('Enviando a Twilio:', { from, to, message: message.substring(0, 50) })
-    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+    await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${auth}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: requestBody,
+      body: new URLSearchParams({
+        From: from,
+        To: to,
+        Body: message,
+      }).toString(),
     })
-
-    const responseText = await response.text()
-    console.log('Twilio response status:', response.status)
-    console.log('Twilio response:', responseText.substring(0, 200))
   } catch (error) {
     console.error('Error enviando respuesta WhatsApp:', error)
   }
