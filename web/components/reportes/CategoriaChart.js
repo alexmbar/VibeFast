@@ -8,7 +8,7 @@ import {
   Legend,
   Tooltip,
 } from 'recharts'
-import { CATEGORIA_LABELS, centavosToPesos } from '@/lib/gastos/schema'
+import { CATEGORIA_LABELS, formatMonto } from '@/lib/gastos/schema'
 
 const COLORS = [
   '#0ea5e9', // sky-500
@@ -22,7 +22,7 @@ export default function CategoriaChart({ data }) {
   const chartData = data.map((item, idx) => ({
     name: CATEGORIA_LABELS[item.categoria] || item.categoria,
     value: item.total,
-    valuePesos: centavosToPesos(item.total),
+    valueLabel: formatMonto(item.total),
     index: idx,
   }))
 
@@ -36,7 +36,7 @@ export default function CategoriaChart({ data }) {
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={({ name, valuePesos }) => `${name}: $${valuePesos}`}
+            label={({ name, valueLabel }) => `${name}: ${valueLabel}`}
             outerRadius={80}
             fill="#8884d8"
             dataKey="value"
@@ -45,7 +45,7 @@ export default function CategoriaChart({ data }) {
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip formatter={(value) => `$${centavosToPesos(value)}`} />
+          <Tooltip formatter={(value) => formatMonto(value)} />
         </PieChart>
       </ResponsiveContainer>
     </div>

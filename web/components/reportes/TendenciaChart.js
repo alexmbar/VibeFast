@@ -10,13 +10,13 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
-import { centavosToPesos } from '@/lib/gastos/schema'
+import { formatMonto } from '@/lib/gastos/schema'
 
 export default function TendenciaChart({ data }) {
   const chartData = data.map(item => ({
     fecha: item.fecha,
     total: item.total,
-    totalPesos: centavosToPesos(item.total),
+    totalPesos: item.total / 100,
   }))
 
   return (
@@ -28,7 +28,7 @@ export default function TendenciaChart({ data }) {
           <XAxis dataKey="fecha" />
           <YAxis />
           <Tooltip
-            formatter={(value) => `$${centavosToPesos(value)}`}
+            formatter={(value) => formatMonto(Math.round(value * 100))}
             labelFormatter={(label) => `Fecha: ${label}`}
           />
           <Legend />
