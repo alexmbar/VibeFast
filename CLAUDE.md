@@ -76,6 +76,19 @@ requerir tocarlos, dímelo antes en vez de modificarlos.
 
 Reporta qué archivos cambiaste y en qué URL pruebo el cambio.
 
+## Entorno de pruebas
+
+Para pasar un cambio a pruebas hay que hacer commit: Vercel despliega
+automáticamente al entorno de pruebas cuando detecta el commit. No hay un
+paso manual de deploy aparte del commit (y push, si el commit es local).
+
+## Referencias de competidores
+
+Apps similares en las que nos podemos basar para ideas de producto/UX. Lista
+abierta: se agregan conforme se vayan encontrando.
+
+- https://finchat.mx/
+
 ## Estilo de código
 
 - Sin emojis en el código fuente, comentarios, mensajes de commit ni logs.
