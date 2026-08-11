@@ -97,18 +97,25 @@ async function respondToWhatsApp(to, message) {
 
   try {
     const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64')
-    await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+    const requestBody = new URLSearchParams({
+      From: from,
+      To: to,
+      Body: message,
+    }).toString()
+
+    console.log('Enviando a Twilio:', { from, to, message: message.substring(0, 50) })
+    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${auth}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        From: from,
-        To: to,
-        Body: message,
-      }).toString(),
+      body: requestBody,
     })
+
+    const responseText = await response.text()
+    console.log('Twilio response status:', response.status)
+    console.log('Twilio response:', responseText.substring(0, 200))
   } catch (error) {
     console.error('Error enviando respuesta WhatsApp:', error)
   }
