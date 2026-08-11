@@ -150,8 +150,9 @@ export async function DELETE(request, { params }) {
     .eq('user_id', user.id)
 
   if (error) {
+    console.error('[gastos] error al eliminar:', error)
     return NextResponse.json(
-      { message: 'Error al eliminar gasto' },
+      { message: error.message || 'Error al eliminar gasto' },
       { status: 500 }
     )
   }

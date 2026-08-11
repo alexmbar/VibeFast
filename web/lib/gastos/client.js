@@ -72,6 +72,7 @@ export async function eliminarGasto(id) {
   })
 
   if (!res.ok) {
-    throw new Error('Error al eliminar gasto')
+    const error = await res.json().catch(() => ({}))
+    throw new Error(error.message || 'Error al eliminar gasto')
   }
 }
