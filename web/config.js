@@ -22,10 +22,10 @@ const config = {
   // Identidad del producto
   // -----------------------------------------------------------
   app: {
-    name: "VibeFast",
+    name: "Controla Gasto",
     description:
-      "Boilerplate AI-native para founders. Construido para el Curso de Vibecoding Remotto.",
-    domain: "vibefast.dev", // sin https://, sin www
+      "App de control de gastos personales. Los gastos entran por WhatsApp y se consultan en reportes web.",
+    domain: "controlagasto.dev", // sin https://, sin www
     locale: "es", // "es" | "en"
     // URL pública: usa NEXT_PUBLIC_APP_URL en .env. En este config solo definimos el default.
     defaultUrl: "http://localhost:3000",
@@ -48,19 +48,19 @@ const config = {
   // Toggles de features — encienden/apagan rutas y componentes
   // -----------------------------------------------------------
   features: {
-    waitlist: true, // Captura emails en landing — Sem 1
-    googleAuth: true, // Login con Google — Sem 2
+    waitlist: false, // Captura emails en landing — no usado
+    googleAuth: true, // Login con Google — necesario
     emailLogin: false, // Magic link email — opcional
-    aiChat: true, // Chat AI en /chat — Sem 3
-    toolUse: true, // Tool use registry — Sem 4
-    agents: true, // LangGraph agents — Sem 5
-    mcp: true, // Servidor MCP en /api/mcp — Sem 5
-    rag: false, // RAG con pgvector — opcional
+    aiChat: false, // Chat AI en /chat — no usado
+    toolUse: false, // Tool use registry — no usado
+    agents: false, // LangGraph agents — no usado
+    mcp: false, // Servidor MCP en /api/mcp — no usado
+    rag: false, // RAG con pgvector — no usado
     posthog: false, // Tracking — opcional
-    resend: true, // Email — Sem 1+
-    pricing: true, // Muestra la sección de precios en la landing (vitrina; el cobro real es `payments`)
-    payments: false, // Stripe — opcional, fuera del temario
-    hardware: false, // ESP-Claw bridge — Sem 8
+    resend: true, // Email — para confirmaciones (Phase 2)
+    pricing: false, // Muestra la sección de precios en la landing
+    payments: false, // Stripe — no usado
+    hardware: false, // ESP-Claw bridge — no usado
   },
 
   // -----------------------------------------------------------
@@ -107,130 +107,130 @@ const config = {
       { label: "Docs", href: "/docs" },
     ],
     hero: {
-      eyebrow: "Curso",
-      title: "De 0 a producto AI-native en 11 semanas.",
+      eyebrow: "Control de Gastos",
+      title: "Tus gastos, bajo control.",
       subtitle:
-        "VibeFast es la plantilla del curso: Next.js, Supabase, OpenAI y MCP cableados desde el día 1. Tú extiendes con prompts en Cursor.",
-      cta: { label: "Únete al waitlist", href: "#waitlist" },
+        "Captura gastos por WhatsApp, foto de ticket o texto. Consulta reportes web. Controla tu dinero sin esfuerzo.",
+      cta: { label: "Empezar", href: "/login" },
       ctaSecondary: { label: "Ver docs", href: "/docs" },
     },
     problem: {
       eyebrow: "El problema",
-      title: "Construir el andamiaje mata tu momentum.",
+      title: "Perder dinero sin darte cuenta.",
       subtitle:
-        "La mayoría de founders se atoran semanas configurando lo mismo antes de tocar su idea real.",
+        "Gastas en OXXO, restaurantes, gasolina y no sabes en qué se te va el dinero. Necesitas visibilidad.",
       items: [
         {
-          icon: "Timer",
-          title: "Semanas en boilerplate",
-          body: "Auth, base de datos, deploy, emails… configuras lo mismo que todos antes de validar nada.",
+          icon: "PieChart",
+          title: "Sin categorización",
+          body: "Los recibos se pierden. No sabes cuánto gastaste en comida vs. transporte.",
         },
         {
-          icon: "Puzzle",
-          title: "Parálisis por herramientas",
-          body: "Cada capa tiene 10 opciones. Comparas en vez de construir y pierdes el hilo.",
+          icon: "BarChart",
+          title: "Sin reportes",
+          body: "No ves patrones. ¿Cuánto invertiste en tecnología este mes? No hay forma de saberlo.",
         },
         {
-          icon: "PlugZap",
-          title: "La IA no se integra sola",
-          body: "Structured outputs, tool use, agentes y MCP suenan bien hasta que hay que cablearlos.",
+          icon: "Zap",
+          title: "Captura lenta",
+          body: "Abrir una app para cada gasto. Mejor si solo envías un mensaje y listo.",
         },
       ],
     },
     features: {
-      eyebrow: "Lo que ya viene listo",
-      title: "Stack completo, una sola decisión por capa.",
-      subtitle: "No pierdes tiempo eligiendo herramientas. Te enfocas en tu producto.",
+      eyebrow: "Lo que tienes",
+      title: "Control total de tus gastos.",
+      subtitle: "Captura rápida, reportes inteligentes, visibilidad total.",
       items: [
         {
-          icon: "Sparkles",
-          title: "AI nativa",
-          body: "OpenAI con structured outputs, tool use, agentes con LangGraph y MCP. Listo para activar.",
+          icon: "MessageCircle",
+          title: "Captura por WhatsApp",
+          body: "Envía un mensaje: '500 oxxo'. Foto del ticket. PDF del estado de cuenta. El bot entiende todo.",
         },
         {
-          icon: "Database",
-          title: "Supabase + Auth",
-          body: "Base de datos con RLS, Google Auth y tablas pre-modeladas. No diseñas schema desde cero.",
+          icon: "BarChart3",
+          title: "Reportes detallados",
+          body: "Ve tu gasto por categoría, tipo de pago, tienda, período. Descubre patrones en tu dinero.",
+        },
+        {
+          icon: "Filter",
+          title: "Filtros potentes",
+          body: "Busca por fecha, categoría, banco, tienda. Segmenta tus gastos como quieras.",
+        },
+        {
+          icon: "Tag",
+          title: "Categorización automática",
+          body: "AI entiende el contexto. 'Starbucks' es entretenimiento. 'Uber' es transporte.",
+        },
+        {
+          icon: "Lock",
+          title: "Privado y seguro",
+          body: "Solo tú ves tus gastos. Cifrado de punta a punta. Sin rastreo ni publicidad.",
         },
         {
           icon: "Zap",
-          title: "Deploy en minutos",
-          body: "Vercel + Supabase Cloud. Una URL pública el primer día.",
-        },
-        {
-          icon: "BookOpen",
-          title: "Docs semana a semana",
-          body: "Tutoriales mapeados al temario del curso, con prompts de Cursor listos para copiar.",
-        },
-        {
-          icon: "Mail",
-          title: "Email + analytics",
-          body: "Resend para correos transaccionales y PostHog opcional para tracking.",
-        },
-        {
-          icon: "Cpu",
-          title: "Hardware-ready",
-          body: "Conexión MCP al ESP-Claw para el caso de hardware con IA del Módulo 3.",
+          title: "Sincronización en tiempo real",
+          body: "Captura en el acto. Reportes actualizados al instante. Acceso desde cualquier dispositivo.",
         },
       ],
     },
     faq: {
       eyebrow: "Preguntas frecuentes",
-      title: "Lo que todo founder pregunta antes de arrancar.",
+      title: "Lo que todos preguntan.",
       items: [
         {
-          q: "¿Necesito saber programar?",
-          a: "No. El curso asume founders no técnicos. Construyes describiendo en Cursor; el boilerplate hace el resto.",
+          q: "¿Cuánto cuesta usar Controla Gasto?",
+          a: "Completamente gratis. Captura ilimitada, reportes ilimitados, sin publicidad ni modelos freemium.",
         },
         {
-          q: "¿Cuánto cuesta correr esto?",
-          a: "Vercel y Supabase tienen tiers gratuitos generosos. OpenAI cobra por uso: con gpt-4o-mini, el costo de un MVP del curso ronda US$5-20.",
+          q: "¿Mis datos están seguros?",
+          a: "Sí. Solo tú ves tus gastos (Row Level Security). Alojados en Supabase con certificación de seguridad. Nunca vendemos tus datos.",
         },
         {
-          q: "¿Puedo cambiar el stack?",
-          a: "Sí, pero el curso (y las docs) asumen este stack. Cambiar pieza por pieza es posible después del curso.",
+          q: "¿Cómo funciona la captura por WhatsApp?",
+          a: "Envías un mensaje con el gasto ('500 oxxo') o foto del ticket. Nuestro AI extrae monto, tienda, categoría. Listo en 1 segundo.",
         },
         {
-          q: "¿Y si me atoro?",
-          a: "Las docs incluyen una sección de troubleshooting con los 20 errores más comunes. Además hay sesión semanal con el docente.",
+          q: "¿Puedo exportar mis datos?",
+          a: "Sí. Descarga tus gastos en CSV o JSON cuando quieras. Es tu dinero, tus datos.",
         },
       ],
     },
     socialProof: {
-      text: "Founders del curso ya lanzaron con este stack",
-      logos: ["Remotto", "Startup Chihuahua", "Next.js", "Supabase", "OpenAI", "Vercel"],
+      text: "Confían en Controla Gasto",
+      logos: ["Freelancers", "Emprendedores", "Profesionales independientes", "PYMEs"],
     },
     testimonials: {
-      eyebrow: "Prueba social",
-      title: "Founders que ya lanzaron con VibeFast.",
-      subtitle: "Testimonios de cohortes anteriores del curso.",
+      eyebrow: "Historias reales",
+      title: "Cómo Controla Gasto cambió la forma de ver el dinero.",
+      subtitle: "Usuarios que ahora saben dónde va cada peso.",
       items: [
         {
           quote:
-            "Pasé de una idea en Notion a un MVP con IA en producción en dos semanas. Nunca había tocado código.",
-          author: "Ana Márquez",
-          role: "Founder · Fisio en casa",
+            "Llevo 3 meses usando Controla Gasto. Descubrí que gasto 2.5K al mes en cafés. Ahora lo veo todo claro.",
+          author: "Marina López",
+          role: "Freelancer de diseño",
         },
         {
           quote:
-            "El boilerplate ya traía auth, base de datos y el agente cableados. Solo describí lo que quería en Cursor.",
-          author: "Diego Sáenz",
-          role: "Founder · Tutor IA",
+            "El reporte mensual me muestra exactamente en qué se va mi dinero. Ya no me sorprendo al fin de mes.",
+          author: "Carlos Ruiz",
+          role: "Emprendedor",
         },
         {
           quote:
-            "Las docs semana a semana fueron mi mapa. Copiaba el prompt, ajustaba y avanzaba sin atorarme.",
-          author: "Lucía Fernández",
-          role: "Founder · Recetario inteligente",
+            "Capturar por WhatsApp es perfecto. No tengo que abrir otra app. Solo envío el ticket y listo.",
+          author: "Sofía Mendez",
+          role: "Consultora independiente",
         },
       ],
     },
     finalCta: {
-      eyebrow: "Tu turno",
-      title: "Deja de configurar. Empieza a construir.",
+      eyebrow: "Comienza hoy",
+      title: "Toma el control de tu dinero en 1 minuto.",
       subtitle:
-        "Clona la plantilla, edita config.js y ten tu producto AI-native en producción esta semana.",
-      cta: { label: "Únete al waitlist", href: "#waitlist" },
+        "Login con Google, envía tu primer gasto por WhatsApp, y empieza a ver tus reportes. No hay nada que configurar.",
+      cta: { label: "Empezar ahora", href: "/login" },
       ctaSecondary: { label: "Leer las docs", href: "/docs" },
     },
     waitlist: {
@@ -242,13 +242,13 @@ const config = {
       placeholder: "tu@email.com",
     },
     footer: {
-      tagline: "Construido para founders. Por Remotto × Startup Chihuahua.",
+      tagline: "Tus gastos, tu dinero, tu control.",
       columns: [
         {
           title: "Producto",
           links: [
             { label: "Características", href: "#features" },
-            { label: "Precios", href: "#pricing" },
+            { label: "Seguridad", href: "#security" },
             { label: "Preguntas", href: "#faq" },
           ],
         },
@@ -256,22 +256,23 @@ const config = {
           title: "Recursos",
           links: [
             { label: "Docs", href: "/docs" },
-            { label: "Quick start", href: "/docs/setup/quick-start" },
-            { label: "Troubleshooting", href: "/docs/troubleshooting/errores-comunes" },
+            { label: "Guía de uso", href: "/docs/guia" },
+            { label: "Soporte", href: "mailto:hola@controlagasto.dev" },
           ],
         },
         {
-          title: "Comunidad",
+          title: "Legal",
           links: [
+            { label: "Privacidad", href: "/privacy" },
+            { label: "Términos", href: "/terms" },
             { label: "GitHub", href: "https://github.com/arampersand/VibeFast", external: true },
-            { label: "Remotto", href: "https://remotto.com", external: true },
           ],
         },
       ],
       // Compat: links planos usados en el bar inferior
       links: [
         { label: "Docs", href: "/docs" },
-        { label: "GitHub", href: "https://github.com/arampersand/VibeFast", external: true },
+        { label: "Soporte", href: "mailto:hola@controlagasto.dev" },
       ],
     },
   },

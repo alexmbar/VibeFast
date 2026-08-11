@@ -1,15 +1,14 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { LayoutDashboard, MessageSquare, Bot } from "lucide-react"
+import { Wallet, BarChart3 } from "lucide-react"
 import config from "@/config"
 import { getUser } from "@/lib/supabase/server"
 import UserMenu from "@/components/auth/UserMenu"
 import Logo from "@/components/Logo"
 
 const NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/chat", label: "Chat", icon: MessageSquare },
-  { href: "/agent", label: "Agente", icon: Bot },
+  { href: "/gastos", label: "Gastos", icon: Wallet },
+  { href: "/reportes", label: "Reportes", icon: BarChart3 },
 ]
 
 // Layout de la zona privada. El middleware ya bloquea sin sesión,
