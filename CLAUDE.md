@@ -51,7 +51,12 @@ el gasto del mes.
 
 - Todo lo visible dice "gasto"/"gastos". Nunca "item" ni "core_item".
 - `categoria` y `tipo_pago` van como `<select>`, nunca texto libre.
-- Las listas se ordenan por `fecha` descendente.
+- Las listas se ordenan por `fecha` descendente por defecto.
+- Todas las tablas de la app son ordenables por columna (ascendente y
+  descendente), con `fecha` y `monto` como columnas prioritarias. El
+  encabezado de cada columna ordenable es clickeable y muestra un indicador
+  (▲/▼) de la columna y dirección activas. Cualquier tabla nueva que se
+  agregue a la app debe implementar este mismo patrón.
 - Montos: formato `es-MX`, alineados a la derecha, con `tabular-nums`.
 - El formulario de crear/editar es **secundario**: el flujo principal es la
   captura por WhatsApp. Existe para corregir, así que prioriza que editar

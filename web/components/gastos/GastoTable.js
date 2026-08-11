@@ -1,12 +1,53 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { eliminarGasto } from '@/lib/gastos/client'
 import { CATEGORIA_LABELS, TIPO_PAGO_LABELS, formatMonto, formatDate, extractHora } from '@/lib/gastos/schema'
 
+const COLUMNAS = [
+  { key: 'fecha', label: 'Fecha' },
+  { key: 'tienda', label: 'Tienda' },
+  { key: 'categoria', label: 'Categoría' },
+  { key: 'tipo_pago', label: 'Tipo de pago' },
+  { key: 'monto', label: 'Monto', className: 'text-right' },
+]
+
+function compararGastos(a, b, columna) {
+  switch (columna) {
+    case 'monto':
+      return a.monto - b.monto
+    case 'fecha':
+      return a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0
+    case 'categoria':
+      return CATEGORIA_LABELS[a.categoria].localeCompare(CATEGORIA_LABELS[b.categoria])
+    case 'tipo_pago':
+      return TIPO_PAGO_LABELS[a.tipo_pago].localeCompare(TIPO_PAGO_LABELS[b.tipo_pago])
+    default:
+      return (a[columna] || '').localeCompare(b[columna] || '')
+  }
+}
+
 export default function GastoTable({ gastos, onDelete, isLoading }) {
   const [deleting, setDeleting] = useState(null)
+  const [sortBy, setSortBy] = useState('fecha')
+  const [sortDir, setSortDir] = useState('desc')
+
+  const gastosOrdenados = useMemo(() => {
+    if (!gastos) return gastos
+    const ordenados = [...gastos].sort((a, b) => compararGastos(a, b, sortBy))
+    if (sortDir === 'desc') ordenados.reverse()
+    return ordenados
+  }, [gastos, sortBy, sortDir])
+
+  function handleSort(columna) {
+    if (columna === sortBy) {
+      setSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortBy(columna)
+      setSortDir('asc')
+    }
+  }
 
   async function handleDelete(id) {
     if (!confirm('¿Eliminar este gasto?')) return
@@ -44,16 +85,25 @@ export default function GastoTable({ gastos, onDelete, isLoading }) {
       <table className="table table-sm">
         <thead>
           <tr>
-            <th>Fecha</th>
-            <th>Tienda</th>
-            <th>Categoría</th>
-            <th>Tipo de pago</th>
-            <th className="text-right">Monto</th>
+            {COLUMNAS.map(({ key, label, className }) => (
+              <th key={key} className={className}>
+                <button
+                  type="button"
+                  onClick={() => handleSort(key)}
+                  className="inline-flex items-center gap-1 hover:text-primary"
+                >
+                  {label}
+                  <span className="text-xs">
+                    {sortBy === key ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                  </span>
+                </button>
+              </th>
+            ))}
             <th className="text-center">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {gastos.map(gasto => (
+          {gastosOrdenados.map(gasto => (
             <tr key={gasto.id} className="hover">
               <td className="font-mono text-sm">
                 <div>{formatDate(gasto.fecha)}</div>
