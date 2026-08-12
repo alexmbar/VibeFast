@@ -38,7 +38,7 @@ const config = {
     // Color primario en HEX. DaisyUI lo aplica como --color-primary via theme.
     primary: "#0ea5e9", // sky-500 (azul cielo)
     // Logo: puede ser texto o ruta a /public/logo.svg
-    logoText: "VibeFast",
+    logoText: "Controla Gasto",
     logoSrc: null,
     // Estilo del bordeado global (DaisyUI usa esto para botones, cards)
     radius: "1rem",
