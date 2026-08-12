@@ -1,12 +1,13 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { Wallet, BarChart3 } from "lucide-react"
+import { LayoutDashboard, Wallet, BarChart3 } from "lucide-react"
 import config from "@/config"
 import { getUser } from "@/lib/supabase/server"
 import UserMenu from "@/components/auth/UserMenu"
 import Logo from "@/components/Logo"
 
 const NAV = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/gastos", label: "Gastos", icon: Wallet },
   { href: "/reportes", label: "Reportes", icon: BarChart3 },
 ]
