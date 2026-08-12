@@ -48,7 +48,7 @@ const config = {
   // Toggles de features — encienden/apagan rutas y componentes
   // -----------------------------------------------------------
   features: {
-    waitlist: false, // Captura emails en landing — no usado
+    waitlist: true, // Captura emails en landing
     googleAuth: true, // Login con Google — necesario
     emailLogin: false, // Magic link email — opcional
     aiChat: false, // Chat AI en /chat — no usado
