@@ -12,38 +12,21 @@ import config from "@/config"
 
 // Email de confirmación tras anotarse al waitlist (Sem 1).
 // Todo el copy sale de config.js para mantener una sola fuente de verdad.
-// `alreadyRegistered` cubre el caso de un correo repetido (unique_violation
-// en /api/waitlist): mismo template, copy distinto en vez de no mandar nada.
-export default function WaitlistConfirm({ alreadyRegistered = false }) {
+export default function WaitlistConfirm() {
   const appName = config.app.name
 
   return (
     <Html lang={config.app.locale}>
       <Head />
-      <Preview>
-        {alreadyRegistered ? `Ya estás en la lista de ${appName}` : `Estás en la lista de ${appName}`}
-      </Preview>
+      <Preview>{`Estás en la lista de ${appName}`}</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section>
-            {alreadyRegistered ? (
-              <>
-                <Heading style={h1}>Ya estás en la lista ✅</Heading>
-                <Text style={text}>
-                  Este correo ya tenía su lugar en la lista de{" "}
-                  <strong>{appName}</strong>. Ya casi estamos listos — te
-                  avisamos en cuanto abramos cupos para la siguiente cohorte.
-                </Text>
-              </>
-            ) : (
-              <>
-                <Heading style={h1}>¡Listo! Ya estás en la lista 🎉</Heading>
-                <Text style={text}>
-                  Gracias por tu interés en <strong>{appName}</strong>. Te
-                  avisaremos en cuanto abramos cupos para la siguiente cohorte.
-                </Text>
-              </>
-            )}
+            <Heading style={h1}>¡Listo! Ya estás en la lista 🎉</Heading>
+            <Text style={text}>
+              Gracias por tu interés en <strong>{appName}</strong>. Te
+              avisaremos en cuanto abramos cupos para la siguiente cohorte.
+            </Text>
             <Text style={text}>
               Mientras tanto, si tienes preguntas puedes responder a este correo.
             </Text>

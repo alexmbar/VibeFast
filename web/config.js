@@ -238,6 +238,7 @@ const config = {
       title: "Sé de los primeros en saber.",
       subtitle: "Te avisamos cuando abramos cupos para la siguiente cohorte.",
       successMessage: "¡Listo! Te avisamos en cuanto haya novedades.",
+      alreadyRegisteredMessage: "Ya estás registrado, ya casi estamos listos.",
       buttonLabel: "Quiero entrar",
       placeholder: "tu@email.com",
     },

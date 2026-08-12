@@ -4,12 +4,20 @@ import { useState } from "react"
 import config from "@/config"
 
 export default function Waitlist() {
-  const { eyebrow, title, subtitle, buttonLabel, placeholder, successMessage } =
-    config.landing.waitlist
+  const {
+    eyebrow,
+    title,
+    subtitle,
+    buttonLabel,
+    placeholder,
+    successMessage,
+    alreadyRegisteredMessage,
+  } = config.landing.waitlist
 
   const [email, setEmail] = useState("")
   const [status, setStatus] = useState("idle") // idle | loading | success | error
   const [error, setError] = useState(null)
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false)
 
   async function onSubmit(e) {
     e.preventDefault()
@@ -21,10 +29,11 @@ export default function Waitlist() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       })
+      const body = await res.json().catch(() => ({}))
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
         throw new Error(body.error || "No pudimos guardar tu correo.")
       }
+      setAlreadyRegistered(Boolean(body.alreadyRegistered))
       setStatus("success")
       setEmail("")
     } catch (err) {
@@ -45,7 +54,7 @@ export default function Waitlist() {
             role="status"
             className="mx-auto mt-10 max-w-md rounded-xl border border-success/40 bg-success/10 px-4 py-6 text-success"
           >
-            {successMessage}
+            {alreadyRegistered ? alreadyRegisteredMessage : successMessage}
           </div>
         ) : (
           <form
