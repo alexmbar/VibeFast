@@ -56,7 +56,7 @@ const config = {
     agents: false, // LangGraph agents — no usado
     mcp: false, // Servidor MCP en /api/mcp — no usado
     rag: false, // RAG con pgvector — no usado
-    posthog: false, // Tracking — opcional
+    posthog: true, // Tracking — opcional
     resend: true, // Email — para confirmaciones (Phase 2)
     pricing: false, // Muestra la sección de precios en la landing
     payments: false, // Stripe — no usado
