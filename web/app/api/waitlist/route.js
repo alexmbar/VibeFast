@@ -32,11 +32,11 @@ export async function POST(request) {
       )
     }
 
-    // Manda la confirmación solo si es un alta nueva. Best-effort,
-    // después de responder (no bloquea la UI). No-op si Resend está off.
-    if (!error) {
-      after(() => sendWaitlistConfirm(normalized))
-    }
+    // Manda confirmación (alta nueva) o aviso de "ya estabas en la lista"
+    // (duplicado). Best-effort, después de responder (no bloquea la UI).
+    // No-op si Resend está off.
+    const alreadyRegistered = Boolean(error)
+    after(() => sendWaitlistConfirm(normalized, { alreadyRegistered }))
 
     return NextResponse.json({ ok: true })
   } catch (err) {

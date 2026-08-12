@@ -34,16 +34,20 @@ export async function sendEmail({ to, subject, body }) {
   return { ok: true }
 }
 
-export async function sendWaitlistConfirm(to) {
+export async function sendWaitlistConfirm(to, { alreadyRegistered = false } = {}) {
   const resend = getResend()
   if (!resend) return { ok: false, skipped: true }
+
+  const subject = alreadyRegistered
+    ? `Ya estás en la lista de ${config.app.name}`
+    : `Estás en la lista de ${config.app.name}`
 
   const { error } = await resend.emails.send({
     from: config.email.from,
     replyTo: config.email.replyTo,
     to,
-    subject: `Estás en la lista de ${config.app.name}`,
-    react: <WaitlistConfirm />,
+    subject,
+    react: <WaitlistConfirm alreadyRegistered={alreadyRegistered} />,
   })
 
   if (error) {

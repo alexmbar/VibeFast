@@ -81,7 +81,7 @@ const config = {
   email: {
     // Asegúrate de tener el dominio verificado en Resend antes de cambiar `from`.
     // En desarrollo Resend permite enviar a tu propio correo desde `onboarding@resend.dev`.
-    from: "VibeFast <onboarding@resend.dev>",
+    from: "Controla Gasto <onboarding@resend.dev>",
     replyTo: "hola@vibefast.dev",
     supportEmail: "soporte@vibefast.dev",
   },
