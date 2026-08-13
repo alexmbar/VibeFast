@@ -1,8 +1,19 @@
 import AgentRun from "@/components/ai/AgentRun"
+import { createClient } from "@/lib/supabase/server"
 
 export const metadata = { title: "Agente de gastos" }
 
-export default function AgentePage() {
+export default async function AgentePage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("mostrar_pensamiento_agente")
+    .eq("id", user.id)
+    .single()
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
@@ -17,6 +28,7 @@ export default function AgentePage() {
       <AgentRun
         endpoint="/api/agente/chat"
         emptyText="Pregúntale algo como '¿cuánto gasté en restaurantes este mes?' o '¿en qué tienda gasto más?'."
+        mostrarPensamiento={profile?.mostrar_pensamiento_agente ?? false}
       />
     </div>
   )

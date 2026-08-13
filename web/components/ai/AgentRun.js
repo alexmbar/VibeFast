@@ -18,6 +18,7 @@ import ToolCallCard from "./ToolCallCard"
 export default function AgentRun({
   endpoint = "/api/ai/agent",
   emptyText = "Pídele algo al agente. Verás su razonamiento y las herramientas que usa.",
+  mostrarPensamiento = false,
 }) {
   const [timeline, setTimeline] = useState([])
   const [running, setRunning] = useState(false)
@@ -132,6 +133,8 @@ export default function AgentRun({
     }
   }
 
+  const lastKind = timeline[timeline.length - 1]?.kind
+
   return (
     <div className="flex h-[72vh] flex-col rounded-box border border-base-200 bg-base-100">
       <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto p-4">
@@ -148,6 +151,7 @@ export default function AgentRun({
               return <Message key={i} role="assistant" content={item.text} />
             }
             if (item.kind === "reasoning") {
+              if (!mostrarPensamiento) return null
               return (
                 <div
                   key={i}
@@ -159,6 +163,7 @@ export default function AgentRun({
               )
             }
             if (item.kind === "tool") {
+              if (!mostrarPensamiento) return null
               return (
                 <ToolCallCard
                   key={i}
@@ -172,12 +177,14 @@ export default function AgentRun({
           })
         )}
 
-        {running && timeline[timeline.length - 1]?.kind === "user" && (
-          <div className="flex items-center gap-2 px-1 text-sm text-base-content/50">
-            <span className="loading loading-dots loading-sm" />
-            El agente está trabajando…
-          </div>
-        )}
+        {running &&
+          lastKind !== "answer" &&
+          (mostrarPensamiento ? lastKind === "user" : true) && (
+            <div className="flex items-center gap-2 px-1 text-sm text-base-content/50">
+              <span className="loading loading-dots loading-sm" />
+              El agente está trabajando…
+            </div>
+          )}
 
         {error && (
           <div role="alert" className="alert alert-error">

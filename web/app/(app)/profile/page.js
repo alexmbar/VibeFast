@@ -9,6 +9,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [phone, setPhone] = useState('')
+  const [mostrarPensamientoAgente, setMostrarPensamientoAgente] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
 
@@ -30,6 +31,7 @@ export default function ProfilePage() {
       if (error) throw error
       setProfile(data)
       setPhone(data.phone || '')
+      setMostrarPensamientoAgente(!!data.mostrar_pensamiento_agente)
     } catch (err) {
       console.error('Error loading profile:', err)
       setError(err.message ? `Error al cargar perfil: ${err.message}` : 'Error al cargar perfil')
@@ -49,7 +51,7 @@ export default function ProfilePage() {
 
       const { error } = await supabase
         .from('profiles')
-        .update({ phone })
+        .update({ phone, mostrar_pensamiento_agente: mostrarPensamientoAgente })
         .eq('id', user.id)
 
       if (error) throw error
@@ -122,6 +124,23 @@ export default function ProfilePage() {
               />
               <label className="label">
                 <span className="label-text-alt text-xs">Formato: +52 código de país + número</span>
+              </label>
+            </div>
+
+            <div className="form-control">
+              <label className="label cursor-pointer justify-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={mostrarPensamientoAgente}
+                  onChange={(e) => setMostrarPensamientoAgente(e.target.checked)}
+                  className="toggle toggle-primary"
+                />
+                <span className="label-text">Mostrar razonamiento del agente de gastos</span>
+              </label>
+              <label className="label">
+                <span className="label-text-alt text-xs">
+                  En /agente, muestra qué consultas hace el agente antes de responder. Desactivado por default.
+                </span>
               </label>
             </div>
 
