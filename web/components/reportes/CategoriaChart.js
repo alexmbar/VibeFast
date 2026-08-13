@@ -1,13 +1,6 @@
 'use client'
 
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Legend,
-  Tooltip,
-} from 'recharts'
+import { VChart } from '@visactor/react-vchart'
 import { CATEGORIA_LABELS, formatMonto } from '@/lib/gastos/schema'
 
 const COLORS = [
@@ -19,35 +12,39 @@ const COLORS = [
 ]
 
 export default function CategoriaChart({ data }) {
-  const chartData = data.map((item, idx) => ({
-    name: CATEGORIA_LABELS[item.categoria] || item.categoria,
-    value: item.total,
-    valueLabel: formatMonto(item.total),
-    index: idx,
+  const chartData = data.map((item) => ({
+    categoria: CATEGORIA_LABELS[item.categoria] || item.categoria,
+    total: item.total / 100,
   }))
+
+  const spec = {
+    type: 'pie',
+    data: [{ id: 'categorias', values: chartData }],
+    valueField: 'total',
+    categoryField: 'categoria',
+    outerRadius: 0.8,
+    innerRadius: 0.6,
+    color: COLORS,
+    legends: { visible: true, orient: 'bottom' },
+    pie: { style: { cornerRadius: 4 } },
+    tooltip: {
+      mark: {
+        content: [
+          {
+            key: (datum) => datum?.categoria,
+            value: (datum) => formatMonto(Math.round((datum?.total ?? 0) * 100)),
+          },
+        ],
+      },
+    },
+  }
 
   return (
     <div className="card bg-base-100 shadow-md p-6">
       <h3 className="font-bold text-lg mb-4">Top 5 Categorías</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
-          <Pie
-            data={chartData}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            label={({ name, valueLabel }) => `${name}: ${valueLabel}`}
-            outerRadius={80}
-            fill="#8884d8"
-            dataKey="value"
-          >
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip formatter={(value) => formatMonto(value)} />
-        </PieChart>
-      </ResponsiveContainer>
+      <div style={{ height: 300 }}>
+        <VChart spec={spec} />
+      </div>
     </div>
   )
 }
