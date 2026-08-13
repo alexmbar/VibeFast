@@ -103,7 +103,7 @@ abierta: se agregan conforme se vayan encontrando.
 
 ## Integración WhatsApp
 
-**Estado:** ✅ Captura automática de gastos funcional
+**Estado:** Captura automática de gastos funcional
 
 **Flujo:**
 1. Usuario envía mensaje a número WhatsApp: `+1 415 523 8886` (sandbox de Twilio)
@@ -135,6 +135,7 @@ abierta: se agregan conforme se vayan encontrando.
 - `web/app/(app)/profile/page.js` — donde usuario agrega su teléfono
 
 ## TODO
+- Incluir carga y lectura de estados de cuenta "https://vibe-fast-web-omega.vercel.app/docs/recetas/chatbot-con-rag"
 
 - Retiros en efectivo: definir cómo se registran (¿tipo de movimiento aparte,
   o `tipo_pago = efectivo` con `categoria` especial?) para no contaminar los

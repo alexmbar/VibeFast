@@ -15,7 +15,10 @@ import ToolCallCard from "./ToolCallCard"
 //   { kind: "reasoning", text }
 //   { kind: "tool", name, args, result }
 //   { kind: "answer", text }   ← acumula los eventos `token`
-export default function AgentRun() {
+export default function AgentRun({
+  endpoint = "/api/ai/agent",
+  emptyText = "Pídele algo al agente. Verás su razonamiento y las herramientas que usa.",
+}) {
   const [timeline, setTimeline] = useState([])
   const [running, setRunning] = useState(false)
   const [error, setError] = useState(null)
@@ -92,7 +95,7 @@ export default function AgentRun() {
       )
 
     try {
-      const res = await fetch("/api/ai/agent", {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages }),
@@ -134,8 +137,7 @@ export default function AgentRun() {
       <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto p-4">
         {timeline.length === 0 ? (
           <div className="flex h-full items-center justify-center text-center text-sm text-base-content/60">
-            Pídele algo al agente. Verás su razonamiento y las herramientas que
-            usa.
+            {emptyText}
           </div>
         ) : (
           timeline.map((item, i) => {

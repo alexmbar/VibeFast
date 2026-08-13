@@ -54,6 +54,7 @@ const config = {
     aiChat: false, // Chat AI en /chat — no usado
     toolUse: false, // Tool use registry — no usado
     agents: false, // LangGraph agents — no usado
+    agenteGastos: true, // Agente de solo lectura en /agente, consulta gastos
     mcp: false, // Servidor MCP en /api/mcp — no usado
     rag: false, // RAG con pgvector — no usado
     posthog: true, // Tracking — opcional
