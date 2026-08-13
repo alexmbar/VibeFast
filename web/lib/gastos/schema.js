@@ -94,6 +94,10 @@ export function validateGasto(data) {
     errors.tipo_pago = 'Tipo de pago inválido'
   }
 
+  if (data.tipo_pago === 'efectivo' && data.banco) {
+    errors.banco = 'Efectivo no debe tener banco asociado'
+  }
+
   return {
     valid: Object.keys(errors).length === 0,
     errors,

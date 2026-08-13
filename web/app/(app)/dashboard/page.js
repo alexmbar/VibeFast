@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Plus, Wallet, Loader2 } from 'lucide-react'
 import { listarGastos } from '@/lib/gastos/client'
 import { formatMonto } from '@/lib/gastos/schema'
 import CategoriaChart from '@/components/reportes/CategoriaChart'
 import TendenciaChart from '@/components/reportes/TendenciaChart'
 import GastoTable from '@/components/gastos/GastoTable'
+import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 
 function toISODate(d) {
   const month = String(d.getMonth() + 1).padStart(2, '0')
@@ -76,7 +79,7 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
-        <span className="loading loading-spinner loading-lg" />
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -84,22 +87,30 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <Link href="/gastos/create" className="btn btn-primary">
-          + Registrar gasto
-        </Link>
+        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <Button render={<Link href="/gastos/create" />}>
+          <Plus />
+          Registrar gasto
+        </Button>
       </div>
 
-      <div className="card bg-base-100 shadow-md p-6">
-        <h3 className="text-sm font-semibold text-gray-500 uppercase">Gasto Total Mensual</h3>
-        <p className="text-4xl font-bold mt-2 font-mono capitalize">{formatMonto(totalMes)}</p>
-        <p className="text-xs text-gray-400 mt-1 capitalize">{MES_LABEL} · {gastosMes.length} registros</p>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase text-muted-foreground">
+            <Wallet className="size-4" />
+            Gasto Total Mensual
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-4xl font-bold font-mono capitalize">{formatMonto(totalMes)}</p>
+          <p className="text-xs text-muted-foreground mt-1 capitalize">{MES_LABEL} · {gastosMes.length} registros</p>
+        </CardContent>
+      </Card>
 
       {gastosMes.length === 0 && gastosSemana.length === 0 && recientes.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-lg text-gray-500">No hay gastos para mostrar</p>
-          <p className="text-sm text-gray-400 mt-2">Registra tu primer gasto para ver el dashboard</p>
+          <p className="text-lg text-muted-foreground">No hay gastos para mostrar</p>
+          <p className="text-sm text-muted-foreground/70 mt-2">Registra tu primer gasto para ver el dashboard</p>
         </div>
       ) : (
         <>
@@ -110,12 +121,16 @@ export default function DashboardPage() {
 
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold">Gastos recientes</h2>
-              <Link href="/gastos" className="link link-primary text-sm">
+              <h2 className="text-xl font-bold tracking-tight">Gastos recientes</h2>
+              <Link href="/gastos" className="text-sm text-primary hover:underline">
                 Ver todos
               </Link>
             </div>
-            <GastoTable gastos={recientes} onDelete={handleDelete} isLoading={false} />
+            <Card>
+              <CardContent>
+                <GastoTable gastos={recientes} onDelete={handleDelete} isLoading={false} />
+              </CardContent>
+            </Card>
           </div>
         </>
       )}

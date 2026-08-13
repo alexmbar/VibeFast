@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Loader2 } from 'lucide-react'
 import { crearGasto, actualizarGasto } from '@/lib/gastos/client'
 import {
   CATEGORIAS,
@@ -13,6 +14,18 @@ import {
   extractHora,
   horaActual,
 } from '@/lib/gastos/schema'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
   const [loading, setLoading] = useState(false)
@@ -29,9 +42,26 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
   })
 
   const isEdit = !!initialData
+  const esEfectivo = formData.tipo_pago === 'efectivo'
+
+  // El efectivo no tiene banco asociado: si el usuario cambia a "efectivo"
+  // con un banco ya capturado, se limpia para no permitir la combinación.
+  useEffect(() => {
+    if (esEfectivo && formData.banco) {
+      setFormData(prev => ({ ...prev, banco: '' }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [esEfectivo])
 
   function handleChange(e) {
     const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: null }))
+    }
+  }
+
+  function handleSelectChange(name, value) {
     setFormData(prev => ({ ...prev, [name]: value }))
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: null }))
@@ -44,8 +74,6 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
     setErrors({})
 
     try {
-      // Crear timestamp con fecha y hora editadas
-      const [hours, minutes] = formData.hora.split(':').map(Number)
       const createdAtDate = new Date(`${formData.fecha}T${formData.hora}:00Z`)
 
       const data = {
@@ -55,7 +83,7 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
         categoria: formData.categoria,
         tipo_pago: formData.tipo_pago,
         tienda: formData.tienda || null,
-        banco: formData.banco || null,
+        banco: esEfectivo ? null : formData.banco || null,
         notas: formData.notas || null,
       }
 
@@ -78,16 +106,15 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card bg-base-100 shadow-md p-6">
+    <form onSubmit={handleSubmit} className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
       <div className="space-y-4">
         {/* Monto */}
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-semibold">Monto</span>
-          </label>
-          <div className="input-group">
-            <span>$</span>
-            <input
+        <div className="space-y-1.5">
+          <Label htmlFor="monto">Monto</Label>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+            <Input
+              id="monto"
               type="number"
               name="monto"
               value={formData.monto}
@@ -96,178 +123,145 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
               step="0.01"
               min="0"
               required
-              className={`input input-bordered flex-1 ${errors.monto ? 'input-error' : ''}`}
+              aria-invalid={!!errors.monto}
+              className="pl-6"
             />
           </div>
-          {errors.monto && (
-            <label className="label">
-              <span className="label-text-alt text-error">{errors.monto}</span>
-            </label>
-          )}
+          {errors.monto && <p className="text-sm text-destructive">{errors.monto}</p>}
         </div>
 
         {/* Fecha y Hora */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-semibold">Fecha</span>
-            </label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="fecha">Fecha</Label>
+            <Input
+              id="fecha"
               type="date"
               name="fecha"
               value={formData.fecha}
               onChange={handleChange}
               required
-              className={`input input-bordered ${errors.fecha ? 'input-error' : ''}`}
+              aria-invalid={!!errors.fecha}
             />
-            {errors.fecha && (
-              <label className="label">
-                <span className="label-text-alt text-error">{errors.fecha}</span>
-              </label>
-            )}
+            {errors.fecha && <p className="text-sm text-destructive">{errors.fecha}</p>}
           </div>
 
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-semibold">Hora</span>
-            </label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="hora">Hora</Label>
+            <Input
+              id="hora"
               type="time"
               name="hora"
               value={formData.hora}
               onChange={handleChange}
-              className="input input-bordered"
             />
           </div>
         </div>
 
         {/* Categoría */}
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-semibold">Categoría</span>
-          </label>
-          <select
-            name="categoria"
+        <div className="space-y-1.5">
+          <Label htmlFor="categoria">Categoría</Label>
+          <Select
             value={formData.categoria}
-            onChange={handleChange}
-            required
-            className={`select select-bordered ${errors.categoria ? 'select-error' : ''}`}
+            onValueChange={(value) => handleSelectChange('categoria', value)}
           >
-            <option value="">Selecciona una categoría</option>
-            {CATEGORIAS.map(cat => (
-              <option key={cat} value={cat}>
-                {CATEGORIA_LABELS[cat]}
-              </option>
-            ))}
-          </select>
-          {errors.categoria && (
-            <label className="label">
-              <span className="label-text-alt text-error">{errors.categoria}</span>
-            </label>
-          )}
+            <SelectTrigger id="categoria" className="w-full" aria-invalid={!!errors.categoria}>
+              <SelectValue placeholder="Selecciona una categoría" />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORIAS.map(cat => (
+                <SelectItem key={cat} value={cat}>
+                  {CATEGORIA_LABELS[cat]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.categoria && <p className="text-sm text-destructive">{errors.categoria}</p>}
         </div>
 
         {/* Tipo de pago */}
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-semibold">Tipo de pago</span>
-          </label>
-          <select
-            name="tipo_pago"
+        <div className="space-y-1.5">
+          <Label htmlFor="tipo_pago">Tipo de pago</Label>
+          <Select
             value={formData.tipo_pago}
-            onChange={handleChange}
-            required
-            className={`select select-bordered ${errors.tipo_pago ? 'select-error' : ''}`}
+            onValueChange={(value) => handleSelectChange('tipo_pago', value)}
           >
-            <option value="">Selecciona tipo de pago</option>
-            {TIPOS_PAGO.map(tipo => (
-              <option key={tipo} value={tipo}>
-                {TIPO_PAGO_LABELS[tipo]}
-              </option>
-            ))}
-          </select>
-          {errors.tipo_pago && (
-            <label className="label">
-              <span className="label-text-alt text-error">{errors.tipo_pago}</span>
-            </label>
-          )}
+            <SelectTrigger id="tipo_pago" className="w-full" aria-invalid={!!errors.tipo_pago}>
+              <SelectValue placeholder="Selecciona tipo de pago" />
+            </SelectTrigger>
+            <SelectContent>
+              {TIPOS_PAGO.map(tipo => (
+                <SelectItem key={tipo} value={tipo}>
+                  {TIPO_PAGO_LABELS[tipo]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.tipo_pago && <p className="text-sm text-destructive">{errors.tipo_pago}</p>}
         </div>
 
         {/* Tienda (opcional) */}
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text">Tienda</span>
-          </label>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="tienda">Tienda</Label>
+          <Input
+            id="tienda"
             type="text"
             name="tienda"
             value={formData.tienda}
             onChange={handleChange}
             placeholder="OXXO, Pemex, etc."
-            className="input input-bordered"
           />
         </div>
 
-        {/* Banco (opcional) */}
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text">Banco</span>
-          </label>
-          <input
+        {/* Banco (opcional, no aplica si el pago es en efectivo) */}
+        <div className="space-y-1.5">
+          <Label htmlFor="banco">Banco</Label>
+          <Input
+            id="banco"
             type="text"
             name="banco"
             value={formData.banco}
             onChange={handleChange}
             placeholder="BBVA, Nu, etc."
-            className="input input-bordered"
+            disabled={esEfectivo}
           />
+          {esEfectivo && (
+            <p className="text-xs text-muted-foreground">Efectivo no tiene banco asociado.</p>
+          )}
+          {errors.banco && <p className="text-sm text-destructive">{errors.banco}</p>}
         </div>
 
         {/* Notas (opcional) */}
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text">Notas</span>
-          </label>
-          <textarea
+        <div className="space-y-1.5">
+          <Label htmlFor="notas">Notas</Label>
+          <Textarea
+            id="notas"
             name="notas"
             value={formData.notas}
             onChange={handleChange}
             placeholder="Observaciones..."
-            className="textarea textarea-bordered"
-            rows="3"
+            rows={3}
           />
         </div>
 
         {/* Error general */}
         {errors.general && (
-          <div className="alert alert-error">
-            <span>{errors.general}</span>
-          </div>
+          <Alert variant="destructive">
+            <AlertDescription>{errors.general}</AlertDescription>
+          </Alert>
         )}
 
         {/* Buttons */}
-        <div className="form-control flex flex-row gap-2 justify-end pt-4">
+        <div className="flex flex-row gap-2 justify-end pt-4">
           {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="btn btn-ghost"
-              disabled={loading}
-            >
+            <Button type="button" variant="ghost" onClick={onCancel} disabled={loading}>
               Cancelar
-            </button>
+            </Button>
           )}
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={loading}
-            aria-busy={loading}
-          >
-            {loading ? (
-              <span className="loading loading-spinner loading-sm" />
-            ) : null}
+          <Button type="submit" disabled={loading} aria-busy={loading}>
+            {loading && <Loader2 className="animate-spin" />}
             {isEdit ? 'Guardar cambios' : 'Crear gasto'}
-          </button>
+          </Button>
         </div>
       </div>
     </form>

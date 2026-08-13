@@ -1,16 +1,20 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Plus } from 'lucide-react'
 import { listarGastos } from '@/lib/gastos/client'
 import GastoTable from '@/components/gastos/GastoTable'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { CATEGORIAS, TIPOS_PAGO, CATEGORIA_LABELS, TIPO_PAGO_LABELS } from '@/lib/gastos/schema'
 
 export default function GastosPage() {
-  const router = useRouter()
   const [gastos, setGastos] = useState([])
   const [isLoading, setIsLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
   const [filters, setFilters] = useState({
     desde: '',
     hasta: '',
@@ -34,6 +38,7 @@ export default function GastosPage() {
 
   useEffect(() => {
     loadGastos()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters])
 
   function handleFilterChange(e) {
@@ -41,126 +46,110 @@ export default function GastosPage() {
     setFilters(prev => ({ ...prev, [name]: value }))
   }
 
+  function handleSelectFilterChange(name, value, sentinel) {
+    setFilters(prev => ({ ...prev, [name]: value === sentinel ? '' : value }))
+  }
+
   function handleDelete(id) {
     setGastos(prev => prev.filter(g => g.id !== id))
   }
+
+  const hayFiltros = filters.desde || filters.hasta || filters.categoria || filters.tipo_pago
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Mis gastos</h1>
-        <Link href="/gastos/create" className="btn btn-primary">
-          + Nuevo gasto
-        </Link>
+        <h1 className="text-2xl font-bold tracking-tight">Mis gastos</h1>
+        <Button render={<Link href="/gastos/create" />}>
+          <Plus />
+          Nuevo gasto
+        </Button>
       </div>
 
       {/* Filtros */}
-      <div className="card bg-base-100 shadow-md p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text text-sm">Desde</span>
-            </label>
-            <input
-              type="date"
-              name="desde"
-              value={filters.desde}
-              onChange={handleFilterChange}
-              className="input input-bordered input-sm"
-            />
+      <Card>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="desde" className="text-sm">Desde</Label>
+              <Input
+                id="desde"
+                type="date"
+                name="desde"
+                value={filters.desde}
+                onChange={handleFilterChange}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="hasta" className="text-sm">Hasta</Label>
+              <Input
+                id="hasta"
+                type="date"
+                name="hasta"
+                value={filters.hasta}
+                onChange={handleFilterChange}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-sm">Categoría</Label>
+              <Select
+                value={filters.categoria || 'todas'}
+                onValueChange={(value) => handleSelectFilterChange('categoria', value, 'todas')}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas</SelectItem>
+                  {CATEGORIAS.map(cat => (
+                    <SelectItem key={cat} value={cat}>{CATEGORIA_LABELS[cat]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-sm">Tipo de pago</Label>
+              <Select
+                value={filters.tipo_pago || 'todos'}
+                onValueChange={(value) => handleSelectFilterChange('tipo_pago', value, 'todos')}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  {TIPOS_PAGO.map(tipo => (
+                    <SelectItem key={tipo} value={tipo}>{TIPO_PAGO_LABELS[tipo]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text text-sm">Hasta</span>
-            </label>
-            <input
-              type="date"
-              name="hasta"
-              value={filters.hasta}
-              onChange={handleFilterChange}
-              className="input input-bordered input-sm"
-            />
-          </div>
-
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text text-sm">Categoría</span>
-            </label>
-            <select
-              name="categoria"
-              value={filters.categoria}
-              onChange={handleFilterChange}
-              className="select select-bordered select-sm"
-            >
-              <option value="">Todas</option>
-              <option value="supermercado">Supermercado</option>
-              <option value="restaurantes">Restaurantes</option>
-              <option value="cafeteria">Cafetería</option>
-              <option value="transporte">Transporte</option>
-              <option value="gasolina">Gasolina</option>
-              <option value="salud">Salud</option>
-              <option value="farmacia">Farmacia</option>
-              <option value="hogar">Hogar</option>
-              <option value="servicios">Servicios</option>
-              <option value="renta">Renta</option>
-              <option value="educacion">Educación</option>
-              <option value="entretenimiento">Entretenimiento</option>
-              <option value="ropa">Ropa</option>
-              <option value="tecnologia">Tecnología</option>
-              <option value="viajes">Viajes</option>
-              <option value="mascotas">Mascotas</option>
-              <option value="regalos">Regalos</option>
-              <option value="impuestos">Impuestos</option>
-              <option value="comisiones">Comisiones</option>
-              <option value="otros">Otros</option>
-            </select>
-          </div>
-
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text text-sm">Tipo de pago</span>
-            </label>
-            <select
-              name="tipo_pago"
-              value={filters.tipo_pago}
-              onChange={handleFilterChange}
-              className="select select-bordered select-sm"
-            >
-              <option value="">Todos</option>
-              <option value="efectivo">Efectivo</option>
-              <option value="debito">Débito</option>
-              <option value="credito">Crédito</option>
-              <option value="transferencia">Transferencia</option>
-              <option value="domiciliado">Domiciliado</option>
-              <option value="vales">Vales</option>
-              <option value="otro">Otro</option>
-            </select>
-          </div>
-        </div>
-
-        {(filters.desde || filters.hasta || filters.categoria || filters.tipo_pago) && (
-          <div className="mt-4">
-            <button
-              onClick={() =>
-                setFilters({
-                  desde: '',
-                  hasta: '',
-                  categoria: '',
-                  tipo_pago: '',
-                })
-              }
-              className="btn btn-sm btn-ghost"
-            >
-              Limpiar filtros
-            </button>
-          </div>
-        )}
-      </div>
+          {hayFiltros && (
+            <div className="mt-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFilters({ desde: '', hasta: '', categoria: '', tipo_pago: '' })}
+              >
+                Limpiar filtros
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Tabla de gastos */}
-      <GastoTable gastos={gastos} onDelete={handleDelete} isLoading={isLoading} />
+      <Card>
+        <CardContent>
+          <GastoTable gastos={gastos} onDelete={handleDelete} isLoading={isLoading} />
+        </CardContent>
+      </Card>
     </div>
   )
 }

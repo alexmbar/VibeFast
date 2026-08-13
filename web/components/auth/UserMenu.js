@@ -1,8 +1,20 @@
+"use client"
+
 import Link from "next/link"
 import { signOut } from "@/lib/auth/actions"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
 
 // Menú de usuario con avatar de Google y botón de cerrar sesión.
-// Server Component: el logout es un Server Action (form action).
+// El logout sigue siendo un Server Action invocado desde un <form>.
 export default function UserMenu({ user }) {
   const meta = user.user_metadata || {}
   const name = meta.full_name || meta.name || user.email
@@ -10,39 +22,27 @@ export default function UserMenu({ user }) {
   const initial = (name || "?").charAt(0).toUpperCase()
 
   return (
-    <div className="dropdown dropdown-end">
-      <div tabIndex={0} role="button" className="btn btn-ghost btn-sm gap-2">
-        {avatar ? (
-          <img
-            src={avatar}
-            alt={name}
-            referrerPolicy="no-referrer"
-            className="size-7 rounded-full"
-          />
-        ) : (
-          <span className="flex size-7 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-content">
-            {initial}
-          </span>
-        )}
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant="ghost" className="gap-2 px-2" />}>
+        <Avatar size="sm">
+          <AvatarImage src={avatar} alt={name} referrerPolicy="no-referrer" />
+          <AvatarFallback>{initial}</AvatarFallback>
+        </Avatar>
         <span className="hidden max-w-32 truncate sm:inline">{name}</span>
-      </div>
-
-      <ul
-        tabIndex={0}
-        className="dropdown-content menu z-50 mt-2 w-52 rounded-box border border-base-200 bg-base-100 p-2 shadow-lg"
-      >
-        <li className="menu-title truncate">{user.email}</li>
-        <li>
-          <Link href="/profile">Perfil</Link>
-        </li>
-        <li>
-          <form action={signOut}>
-            <button type="submit" className="w-full text-left text-error">
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem render={<Link href="/profile" />}>Perfil</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" className="p-0">
+          <form action={signOut} className="w-full">
+            <button type="submit" className="w-full px-1.5 py-1 text-left">
               Cerrar sesión
             </button>
           </form>
-        </li>
-      </ul>
-    </div>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

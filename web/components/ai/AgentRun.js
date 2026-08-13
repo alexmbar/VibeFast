@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { AlertCircle, Brain } from "lucide-react"
+import { AlertCircle, Brain, Loader2 } from "lucide-react"
 import Message from "./Message"
 import ChatInput from "./ChatInput"
 import ToolCallCard from "./ToolCallCard"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 // Corre el agente y muestra su timeline: razonamiento, tool calls y la
 // respuesta final. Lee SSE de POST /api/ai/agent — líneas `data: {json}\n\n`
@@ -136,10 +137,10 @@ export default function AgentRun({
   const lastKind = timeline[timeline.length - 1]?.kind
 
   return (
-    <div className="flex h-[72vh] flex-col rounded-box border border-base-200 bg-base-100">
+    <div className="flex h-[72vh] flex-col rounded-xl border bg-card">
       <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto p-4">
         {timeline.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-center text-sm text-base-content/60">
+          <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">
             {emptyText}
           </div>
         ) : (
@@ -155,7 +156,7 @@ export default function AgentRun({
               return (
                 <div
                   key={i}
-                  className="flex items-start gap-2 px-1 text-sm italic text-base-content/60"
+                  className="flex items-start gap-2 px-1 text-sm italic text-muted-foreground"
                 >
                   <Brain className="mt-0.5 size-4 shrink-0" />
                   <span className="whitespace-pre-wrap">{item.text}</span>
@@ -180,21 +181,21 @@ export default function AgentRun({
         {running &&
           lastKind !== "answer" &&
           (mostrarPensamiento ? lastKind === "user" : true) && (
-            <div className="flex items-center gap-2 px-1 text-sm text-base-content/50">
-              <span className="loading loading-dots loading-sm" />
+            <div className="flex items-center gap-2 px-1 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" />
               El agente está trabajando…
             </div>
           )}
 
         {error && (
-          <div role="alert" className="alert alert-error">
-            <AlertCircle className="size-5" />
-            <span>{error}</span>
-          </div>
+          <Alert variant="destructive">
+            <AlertCircle className="size-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
       </div>
 
-      <div className="border-t border-base-200 p-4">
+      <div className="border-t p-4">
         <ChatInput onSubmit={handleSubmit} disabled={running} />
       </div>
     </div>

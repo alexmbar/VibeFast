@@ -1,6 +1,7 @@
 'use client'
 
 import { VChart } from '@visactor/react-vchart'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { CATEGORIA_LABELS, formatMonto } from '@/lib/gastos/schema'
 
 const COLORS = [
@@ -12,6 +13,8 @@ const COLORS = [
 ]
 
 export default function CategoriaChart({ data }) {
+  const totalCentavos = data.reduce((sum, item) => sum + item.total, 0)
+
   const chartData = data.map((item) => ({
     categoria: CATEGORIA_LABELS[item.categoria] || item.categoria,
     total: item.total / 100,
@@ -22,8 +25,8 @@ export default function CategoriaChart({ data }) {
     data: [{ id: 'categorias', values: chartData }],
     valueField: 'total',
     categoryField: 'categoria',
-    outerRadius: 0.8,
-    innerRadius: 0.6,
+    outerRadius: 0.9,
+    innerRadius: 0.75,
     color: COLORS,
     legends: { visible: true, orient: 'bottom' },
     pie: { style: { cornerRadius: 4 } },
@@ -37,14 +40,34 @@ export default function CategoriaChart({ data }) {
         ],
       },
     },
+    indicator: [
+      {
+        visible: true,
+        offsetY: -8,
+        title: {
+          style: { text: 'Total', fontSize: 12, opacity: 0.6 },
+        },
+      },
+      {
+        visible: true,
+        offsetY: 14,
+        title: {
+          style: { text: formatMonto(totalCentavos), fontSize: 18, fontWeight: 'bold' },
+        },
+      },
+    ],
   }
 
   return (
-    <div className="card bg-base-100 shadow-md p-6">
-      <h3 className="font-bold text-lg mb-4">Top 5 Categorías</h3>
-      <div style={{ height: 300 }}>
-        <VChart spec={spec} />
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Top 5 Categorías</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div style={{ height: 300 }}>
+          <VChart spec={spec} />
+        </div>
+      </CardContent>
+    </Card>
   )
 }

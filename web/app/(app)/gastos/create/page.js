@@ -16,7 +16,7 @@ export default function CreateGastoPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Nuevo gasto</h1>
+      <h1 className="text-2xl font-bold tracking-tight">Nuevo gasto</h1>
       <div className="max-w-2xl">
         <GastoForm onSuccess={handleSuccess} onCancel={handleCancel} />
       </div>

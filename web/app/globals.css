@@ -1,4 +1,12 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* shadcn usa la variante .dark por default; esta app cambia de tema con el
+   atributo data-theme de DaisyUI (vibefast/vibefast-dark), así que se
+   redefine la variante dark para que ambos sistemas reaccionen al mismo
+   toggle en vez de divergir. */
+@custom-variant dark (&:where([data-theme="vibefast-dark"], [data-theme="vibefast-dark"] *));
 @plugin "daisyui";
 
 /* ============================================================
@@ -198,4 +206,64 @@ h4,
 }
 .prose-vf hr {
   @apply my-8 border-base-300;
+}
+
+/* ============================================================
+   Puente shadcn/ui — alias de los tokens de shadcn a los tokens de
+   DaisyUI ya existentes (arriba). Un solo origen de verdad para color:
+   cambiar --color-primary (o config.brand.primary, inyectado inline en
+   layout.js) cambia ambos sistemas a la vez. Nada de valores duplicados.
+
+   A propósito NO hay un @layer base global (ni "* { border-color }" ni
+   "body { bg-background }"): eso afectaría también a (marketing)/docs,
+   que siguen siendo DaisyUI puro. Las páginas de (app) aplican
+   bg-background/text-foreground explícitamente en su layout.
+   ============================================================ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --background: var(--color-base-200);
+  --foreground: var(--color-base-content);
+  --card: var(--color-base-100);
+  --card-foreground: var(--color-base-content);
+  --popover: var(--color-base-100);
+  --popover-foreground: var(--color-base-content);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-content);
+  --secondary: var(--color-base-200);
+  --secondary-foreground: var(--color-base-content);
+  --muted: var(--color-base-200);
+  --muted-foreground: color-mix(in oklch, var(--color-base-content) 60%, transparent);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-accent-content);
+  --destructive: var(--color-error);
+  --destructive-foreground: #ffffff;
+  --border: var(--color-base-300);
+  --input: var(--color-base-300);
+  --ring: var(--color-primary);
+  --radius: var(--radius-field);
 }

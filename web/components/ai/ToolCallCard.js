@@ -1,6 +1,8 @@
 "use client"
 
 import { Wrench } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
 // Formatea args/result que pueden venir como objeto o string.
 function format(value) {
@@ -14,42 +16,34 @@ function format(value) {
 }
 
 // Card de una herramienta ejecutada por el agente: nombre + args + result.
-// Visualmente distinta a una burbuja de mensaje (acento, icono, monoespaciado).
 export default function ToolCallCard({ name, args, result }) {
   const argsText = format(args)
   const resultText = format(result)
 
   return (
-    <div className="rounded-box border border-base-300 bg-base-200/60 p-3 text-sm">
-      <div className="mb-2 flex items-center gap-2">
-        <Wrench className="size-4 text-base-content/60" />
-        <span className="badge badge-neutral badge-sm font-mono">{name}</span>
-      </div>
-
-      {argsText && (
-        <div className="mb-2">
-          <p className="mb-1 text-xs font-medium text-base-content/60">
-            Argumentos
-          </p>
-          <pre className="overflow-x-auto rounded-lg bg-base-300/50 p-2 text-xs">
-            {argsText}
-          </pre>
+    <Card>
+      <CardContent className="text-sm">
+        <div className="mb-2 flex items-center gap-2">
+          <Wrench className="size-4 text-muted-foreground" />
+          <Badge variant="secondary" className="font-mono">{name}</Badge>
         </div>
-      )}
 
-      {resultText && (
-        <div className="collapse-arrow collapse bg-base-300/40">
-          <input type="checkbox" defaultChecked />
-          <div className="collapse-title min-h-0 px-2 py-1 text-xs font-medium text-base-content/60">
-            Resultado
+        {argsText && (
+          <div className="mb-2">
+            <p className="mb-1 text-xs font-medium text-muted-foreground">Argumentos</p>
+            <pre className="overflow-x-auto rounded-lg bg-muted p-2 text-xs">{argsText}</pre>
           </div>
-          <div className="collapse-content px-2">
-            <pre className="overflow-x-auto rounded-lg bg-base-300/50 p-2 text-xs">
-              {resultText}
-            </pre>
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {resultText && (
+          <details open className="rounded-lg bg-muted">
+            <summary className="cursor-pointer select-none px-2 py-1 text-xs font-medium text-muted-foreground">
+              Resultado
+            </summary>
+            <pre className="overflow-x-auto rounded-lg p-2 text-xs">{resultText}</pre>
+          </details>
+        )}
+      </CardContent>
+    </Card>
   )
 }

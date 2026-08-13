@@ -18,7 +18,7 @@ export default async function AgentePage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Agente de gastos</h1>
-        <p className="mt-1 text-sm text-base-content/70">
+        <p className="mt-1 text-sm text-muted-foreground">
           Pregúntale sobre tus gastos: totales por categoría, comparativas por
           mes, tiendas donde más gastas. Por ahora solo puede leer — no crea
           ni edita gastos.

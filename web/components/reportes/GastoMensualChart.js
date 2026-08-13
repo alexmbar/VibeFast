@@ -1,6 +1,7 @@
 'use client'
 
 import { VChart } from '@visactor/react-vchart'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { formatMonto } from '@/lib/gastos/schema'
 
 export default function GastoMensualChart({ data }) {
@@ -29,11 +30,15 @@ export default function GastoMensualChart({ data }) {
   }
 
   return (
-    <div className="card bg-base-100 shadow-md p-6">
-      <h3 className="font-bold text-lg mb-4">Gasto Mensual</h3>
-      <div style={{ height: 300 }}>
-        <VChart spec={spec} />
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Gasto Mensual</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div style={{ height: 300 }}>
+          <VChart spec={spec} />
+        </div>
+      </CardContent>
+    </Card>
   )
 }

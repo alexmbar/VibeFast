@@ -78,12 +78,13 @@ export async function PATCH(request, { params }) {
     ...body,
   }
 
-  if (body.monto || body.fecha || body.categoria || body.tipo_pago) {
+  if (body.monto || body.fecha || body.categoria || body.tipo_pago || body.banco !== undefined) {
     const validation = validateGasto({
       monto: body.monto || existing.monto,
       fecha: body.fecha || existing.fecha,
       categoria: body.categoria || existing.categoria,
       tipo_pago: body.tipo_pago || existing.tipo_pago,
+      banco: body.banco !== undefined ? body.banco : existing.banco,
     })
     if (!validation.valid) {
       return NextResponse.json(

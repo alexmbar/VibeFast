@@ -1,7 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default function ProfilePage() {
   const supabase = createClient()
@@ -15,6 +22,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     loadProfile()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function loadProfile() {
@@ -69,97 +77,75 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <span className="loading loading-spinner loading-lg" />
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   return (
     <div className="max-w-md mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Mi Perfil</h1>
+      <h1 className="text-2xl font-bold tracking-tight mb-6">Mi Perfil</h1>
 
-      <div className="card bg-base-100 shadow-md p-6 space-y-4">
-        {error && (
-          <div className="alert alert-error text-sm">
-            <span>{error}</span>
-          </div>
-        )}
+      <Card>
+        <CardContent className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-        {profile && (
-          <>
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Email</span>
-              </label>
-              <input
-                type="email"
-                value={profile.email || ''}
-                disabled
-                className="input input-bordered"
-              />
-            </div>
-
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Nombre</span>
-              </label>
-              <input
-                type="text"
-                value={profile.full_name || ''}
-                disabled
-                className="input input-bordered"
-              />
-            </div>
-
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Teléfono WhatsApp</span>
-              </label>
-              <input
-                type="tel"
-                placeholder="+5216145138306"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="input input-bordered"
-              />
-              <label className="label">
-                <span className="label-text-alt text-xs">Formato: +52 código de país + número</span>
-              </label>
-            </div>
-
-            <div className="form-control">
-              <label className="label cursor-pointer justify-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={mostrarPensamientoAgente}
-                  onChange={(e) => setMostrarPensamientoAgente(e.target.checked)}
-                  className="toggle toggle-primary"
-                />
-                <span className="label-text">Mostrar razonamiento del agente de gastos</span>
-              </label>
-              <label className="label">
-                <span className="label-text-alt text-xs">
-                  En /agente, muestra qué consultas hace el agente antes de responder. Desactivado por default.
-                </span>
-              </label>
-            </div>
-
-            {success && (
-              <div className="alert alert-success text-sm">
-                <span>Guardado correctamente</span>
+          {profile && (
+            <>
+              <div className="space-y-1.5">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={profile.email || ''} disabled />
               </div>
-            )}
 
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="btn btn-primary w-full"
-            >
-              {saving ? <span className="loading loading-spinner loading-sm" /> : 'Guardar'}
-            </button>
-          </>
-        )}
-      </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="full_name">Nombre</Label>
+                <Input id="full_name" type="text" value={profile.full_name || ''} disabled />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="phone">Teléfono WhatsApp</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+5216145138306"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">Formato: +52 código de país + número</p>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 pt-2">
+                <div>
+                  <Label htmlFor="mostrar-pensamiento">Mostrar razonamiento del agente de gastos</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    En /agente, muestra qué consultas hace el agente antes de responder. Desactivado por default.
+                  </p>
+                </div>
+                <Switch
+                  id="mostrar-pensamiento"
+                  checked={mostrarPensamientoAgente}
+                  onCheckedChange={setMostrarPensamientoAgente}
+                />
+              </div>
+
+              {success && (
+                <Alert>
+                  <AlertDescription>Guardado correctamente</AlertDescription>
+                </Alert>
+              )}
+
+              <Button onClick={handleSave} disabled={saving} className="w-full">
+                {saving && <Loader2 className="animate-spin" />}
+                Guardar
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
