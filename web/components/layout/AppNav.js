@@ -2,17 +2,28 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { LayoutDashboard, Wallet, BarChart3, Bot } from "lucide-react"
 import { cn } from "@/lib/utils"
+
+// Los componentes de ícono (funciones) no son serializables entre el
+// server component padre (app)/layout.js y este client component, así
+// que NAV vive aquí en vez de recibirse por props.
+const NAV = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/gastos", label: "Gastos", icon: Wallet },
+  { href: "/reportes", label: "Reportes", icon: BarChart3 },
+  { href: "/agente", label: "Agente", icon: Bot },
+]
 
 // Nav lateral de (app). Cliente aparte del layout (server component) para
 // poder resaltar la ruta activa con usePathname sin convertir el layout
 // -- y con él, el guard de auth -- en cliente.
-export default function AppNav({ items }) {
+export default function AppNav() {
   const pathname = usePathname()
 
   return (
     <nav className="flex flex-col gap-1 rounded-xl bg-card p-2 ring-1 ring-foreground/10">
-      {items.map(({ href, label, icon: Icon }) => {
+      {NAV.map(({ href, label, icon: Icon }) => {
         const active = pathname === href || pathname?.startsWith(`${href}/`)
         return (
           <Link
