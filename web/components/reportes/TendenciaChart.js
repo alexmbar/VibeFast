@@ -3,8 +3,11 @@
 import { VChart } from '@visactor/react-vchart'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { formatMonto } from '@/lib/gastos/schema'
+import { CHART_COLORS } from '@/lib/theme/chartColors'
+import { useAppTheme } from '@/components/layout/AppTheme'
 
 export default function TendenciaChart({ data }) {
+  const { isDark } = useAppTheme()
   const chartData = data.map((item) => ({
     fecha: item.fecha,
     total: item.total / 100,
@@ -15,7 +18,7 @@ export default function TendenciaChart({ data }) {
     data: [{ id: 'tendencia', values: chartData }],
     xField: 'fecha',
     yField: 'total',
-    color: ['#0ea5e9'],
+    color: [CHART_COLORS[0]],
     point: { visible: false },
     line: { style: { curveType: 'monotone' } },
     tooltip: {
@@ -37,7 +40,7 @@ export default function TendenciaChart({ data }) {
       </CardHeader>
       <CardContent>
         <div style={{ height: 300 }}>
-          <VChart spec={spec} />
+          <VChart spec={spec} theme={isDark ? 'dark' : 'light'} />
         </div>
       </CardContent>
     </Card>

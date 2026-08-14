@@ -3,16 +3,11 @@
 import { VChart } from '@visactor/react-vchart'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { CATEGORIA_LABELS, formatMonto } from '@/lib/gastos/schema'
-
-const COLORS = [
-  '#0ea5e9', // sky-500
-  '#06b6d4', // cyan-500
-  '#10b981', // emerald-500
-  '#f59e0b', // amber-500
-  '#ef4444', // red-500
-]
+import { CHART_COLORS } from '@/lib/theme/chartColors'
+import { useAppTheme } from '@/components/layout/AppTheme'
 
 export default function CategoriaChart({ data }) {
+  const { isDark } = useAppTheme()
   const totalCentavos = data.reduce((sum, item) => sum + item.total, 0)
 
   const chartData = data.map((item) => ({
@@ -27,7 +22,7 @@ export default function CategoriaChart({ data }) {
     categoryField: 'categoria',
     outerRadius: 0.9,
     innerRadius: 0.75,
-    color: COLORS,
+    color: CHART_COLORS,
     legends: { visible: true, orient: 'bottom' },
     pie: { style: { cornerRadius: 4 } },
     tooltip: {
@@ -65,7 +60,7 @@ export default function CategoriaChart({ data }) {
       </CardHeader>
       <CardContent>
         <div style={{ height: 300 }}>
-          <VChart spec={spec} />
+          <VChart spec={spec} theme={isDark ? 'dark' : 'light'} />
         </div>
       </CardContent>
     </Card>

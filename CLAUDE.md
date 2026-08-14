@@ -77,6 +77,10 @@ Al crear una, dime el comando exacto que debo correr.
 El login y la protección de rutas se quedan como están. Si un cambio parece
 requerir tocarlos, dímelo antes en vez de modificarlos.
 
+
+## Al iniciar una tarea
+Haz preguntas al usuario para entender mejor sus requerimientos.
+
 ## Al terminar una tarea
 
 Reporta qué archivos cambiaste y en qué URL pruebo el cambio.
@@ -100,6 +104,7 @@ abierta: se agregan conforme se vayan encontrando.
 - Nombres de variables, funciones y comentarios en español o inglés consistente
   con el resto del archivo (elige uno y dilo aquí si aplica).
 - No incluir autores.
+
 
 ## Integración WhatsApp
 
@@ -179,3 +184,4 @@ abierta: se agregan conforme se vayan encontrando.
   calcula real (con periodicidad, capitalización) o es solo informativo/
   proyectado, y cómo se relaciona con Cartera (ver ítem de retiros en
   efectivo) si es que comparten saldo.
+

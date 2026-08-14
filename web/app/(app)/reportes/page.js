@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Wallet, Calculator, CalendarDays } from 'lucide-react'
 import { listarGastos } from '@/lib/gastos/client'
 import { formatMonto } from '@/lib/gastos/schema'
 import GastoMensualChart from '@/components/reportes/GastoMensualChart'
@@ -148,7 +148,12 @@ export default function ReportesPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-semibold uppercase text-muted-foreground">Gasto Total</CardTitle>
+            <CardTitle className="flex items-center gap-3 text-sm font-semibold uppercase text-muted-foreground">
+              <span className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                <Wallet className="size-4.5" />
+              </span>
+              Gasto Total
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold font-mono">{formatMonto(totalGastos)}</p>
@@ -158,7 +163,12 @@ export default function ReportesPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-semibold uppercase text-muted-foreground">Gasto Promedio</CardTitle>
+            <CardTitle className="flex items-center gap-3 text-sm font-semibold uppercase text-muted-foreground">
+              <span className="flex size-9 items-center justify-center rounded-lg bg-cyan-400/15 text-cyan-400">
+                <Calculator className="size-4.5" />
+              </span>
+              Gasto Promedio
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold font-mono">{formatMonto(promedioDiario)}</p>
@@ -168,7 +178,12 @@ export default function ReportesPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-semibold uppercase text-muted-foreground">Días con Gasto</CardTitle>
+            <CardTitle className="flex items-center gap-3 text-sm font-semibold uppercase text-muted-foreground">
+              <span className="flex size-9 items-center justify-center rounded-lg bg-orange-400/15 text-orange-400">
+                <CalendarDays className="size-4.5" />
+              </span>
+              Días con Gasto
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{gastoDiasUnicos}</p>

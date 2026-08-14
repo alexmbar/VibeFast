@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Loader2 } from "lucide-react"
 import Message from "./Message"
 import ChatInput from "./ChatInput"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 // Chat con streaming. POST /api/ai/chat → stream de texto plano;
 // leemos el body con un reader y vamos concatenando al último mensaje
@@ -67,10 +68,10 @@ export default function Chat() {
   }
 
   return (
-    <div className="flex h-[70vh] flex-col rounded-box border border-base-200 bg-base-100">
+    <div className="flex h-[70vh] flex-col rounded-xl border bg-card">
       <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto p-4">
         {messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-center text-sm text-base-content/60">
+          <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">
             Empieza la conversación escribiendo un mensaje abajo.
           </div>
         ) : (
@@ -82,21 +83,21 @@ export default function Chat() {
         {streaming &&
           messages[messages.length - 1]?.role === "assistant" &&
           messages[messages.length - 1]?.content === "" && (
-            <div className="flex items-center gap-2 px-1 text-sm text-base-content/50">
-              <span className="loading loading-dots loading-sm" />
+            <div className="flex items-center gap-2 px-1 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" />
               Pensando…
             </div>
           )}
 
         {error && (
-          <div role="alert" className="alert alert-error">
-            <AlertCircle className="size-5" />
-            <span>{error}</span>
-          </div>
+          <Alert variant="destructive">
+            <AlertCircle />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
       </div>
 
-      <div className="border-t border-base-200 p-4">
+      <div className="border-t p-4">
         <ChatInput onSubmit={handleSubmit} disabled={streaming} />
       </div>
     </div>

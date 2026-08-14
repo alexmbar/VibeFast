@@ -96,8 +96,10 @@ export default function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase text-muted-foreground">
-            <Wallet className="size-4" />
+          <CardTitle className="flex items-center gap-3 text-sm font-semibold uppercase text-muted-foreground">
+            <span className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+              <Wallet className="size-4.5" />
+            </span>
             Gasto Total Mensual
           </CardTitle>
         </CardHeader>
