@@ -17,6 +17,8 @@ export default function CategoriaChart({ data }) {
 
   const spec = {
     type: 'pie',
+    theme: isDark ? 'dark' : 'light',
+    background: 'transparent',
     data: [{ id: 'categorias', values: chartData }],
     valueField: 'total',
     categoryField: 'categoria',
@@ -60,7 +62,7 @@ export default function CategoriaChart({ data }) {
       </CardHeader>
       <CardContent>
         <div style={{ height: 300 }}>
-          <VChart spec={spec} theme={isDark ? 'dark' : 'light'} />
+          <VChart spec={spec} />
         </div>
       </CardContent>
     </Card>

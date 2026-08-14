@@ -15,6 +15,8 @@ export default function GastoMensualChart({ data }) {
 
   const spec = {
     type: 'bar',
+    theme: isDark ? 'dark' : 'light',
+    background: 'transparent',
     data: [{ id: 'mensual', values: chartData }],
     xField: 'mes',
     yField: 'total',
@@ -39,7 +41,7 @@ export default function GastoMensualChart({ data }) {
       </CardHeader>
       <CardContent>
         <div style={{ height: 300 }}>
-          <VChart spec={spec} theme={isDark ? 'dark' : 'light'} />
+          <VChart spec={spec} />
         </div>
       </CardContent>
     </Card>

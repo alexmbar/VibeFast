@@ -15,6 +15,8 @@ export default function TendenciaChart({ data }) {
 
   const spec = {
     type: 'line',
+    theme: isDark ? 'dark' : 'light',
+    background: 'transparent',
     data: [{ id: 'tendencia', values: chartData }],
     xField: 'fecha',
     yField: 'total',
@@ -40,7 +42,7 @@ export default function TendenciaChart({ data }) {
       </CardHeader>
       <CardContent>
         <div style={{ height: 300 }}>
-          <VChart spec={spec} theme={isDark ? 'dark' : 'light'} />
+          <VChart spec={spec} />
         </div>
       </CardContent>
     </Card>
