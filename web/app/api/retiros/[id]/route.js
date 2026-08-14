@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { validateGasto } from '@/lib/gastos/schema'
+import { validateRetiro } from '@/lib/retiros/schema'
 
 export async function GET(request, { params }) {
   const supabase = await createClient()
@@ -17,15 +17,15 @@ export async function GET(request, { params }) {
 
   const { id } = await params
   const { data, error } = await supabase
-    .from('gastos')
-    .select('*')
+    .from('retiros')
+    .select('*, banco:bancos(id, nombre, tipo)')
     .eq('id', id)
     .eq('user_id', user.id)
     .single()
 
   if (error || !data) {
     return NextResponse.json(
-      { message: 'Gasto no encontrado' },
+      { message: 'Retiro no encontrado' },
       { status: 404 }
     )
   }
@@ -48,9 +48,8 @@ export async function PATCH(request, { params }) {
 
   const { id } = await params
 
-  // Verificar que el gasto pertenece al usuario
   const { data: existing, error: fetchError } = await supabase
-    .from('gastos')
+    .from('retiros')
     .select('*')
     .eq('id', id)
     .eq('user_id', user.id)
@@ -58,7 +57,7 @@ export async function PATCH(request, { params }) {
 
   if (fetchError || !existing) {
     return NextResponse.json(
-      { message: 'Gasto no encontrado' },
+      { message: 'Retiro no encontrado' },
       { status: 404 }
     )
   }
@@ -73,64 +72,57 @@ export async function PATCH(request, { params }) {
     )
   }
 
-  // Validar datos si están presentes
-  const dataToUpdate = {
-    ...body,
+  const validation = validateRetiro({
+    monto: body.monto || existing.monto,
+    fecha: body.fecha || existing.fecha,
+    banco_id: body.banco_id !== undefined ? body.banco_id : existing.banco_id,
+  })
+  if (!validation.valid) {
+    return NextResponse.json(
+      { message: 'Datos inválidos', errors: validation.errors },
+      { status: 400 }
+    )
   }
 
-  if (body.monto || body.fecha || body.categoria || body.tipo_pago || body.banco_id !== undefined) {
-    const validation = validateGasto({
-      monto: body.monto || existing.monto,
-      fecha: body.fecha || existing.fecha,
-      categoria: body.categoria || existing.categoria,
-      tipo_pago: body.tipo_pago || existing.tipo_pago,
-      banco_id: body.banco_id !== undefined ? body.banco_id : existing.banco_id,
-    })
-    if (!validation.valid) {
+  const dataToUpdate = {}
+  if (body.monto !== undefined) dataToUpdate.monto = body.monto
+  if (body.fecha !== undefined) dataToUpdate.fecha = body.fecha
+  if (body.notas !== undefined) dataToUpdate.notas = body.notas || null
+
+  if (body.banco_id !== undefined) {
+    const { data: banco, error: bancoError } = await supabase
+      .from('bancos')
+      .select('id, tipo')
+      .eq('id', body.banco_id)
+      .eq('user_id', user.id)
+      .single()
+
+    if (bancoError || !banco) {
       return NextResponse.json(
-        { message: 'Datos inválidos', errors: validation.errors },
+        { message: 'Datos inválidos', errors: { banco_id: 'Banco inválido' } },
         { status: 400 }
       )
     }
-  }
-
-  // Resolver banco_id contra el catálogo del usuario y mantener la
-  // columna banco (denormalizada) en sincronía.
-  if (body.banco_id !== undefined) {
-    if (body.banco_id) {
-      const { data: banco, error: bancoError } = await supabase
-        .from('bancos')
-        .select('id, nombre')
-        .eq('id', body.banco_id)
-        .eq('user_id', user.id)
-        .single()
-
-      if (bancoError || !banco) {
-        return NextResponse.json(
-          { message: 'Datos inválidos', errors: { banco_id: 'Banco inválido' } },
-          { status: 400 }
-        )
-      }
-      dataToUpdate.banco_id = banco.id
-      dataToUpdate.banco = banco.nombre
-    } else {
-      dataToUpdate.banco_id = null
-      dataToUpdate.banco = null
+    if (banco.tipo !== 'debito') {
+      return NextResponse.json(
+        { message: 'Datos inválidos', errors: { banco_id: 'El banco de un retiro debe ser de tipo débito' } },
+        { status: 400 }
+      )
     }
+    dataToUpdate.banco_id = banco.id
   }
 
-  // Actualizar gasto
   const { data, error } = await supabase
-    .from('gastos')
+    .from('retiros')
     .update(dataToUpdate)
     .eq('id', id)
     .eq('user_id', user.id)
-    .select()
+    .select('*, banco:bancos(id, nombre, tipo)')
     .single()
 
   if (error) {
     return NextResponse.json(
-      { message: 'Error al actualizar gasto' },
+      { message: 'Error al actualizar retiro' },
       { status: 500 }
     )
   }
@@ -153,9 +145,8 @@ export async function DELETE(request, { params }) {
 
   const { id } = await params
 
-  // Verificar que el gasto pertenece al usuario
   const { data: existing, error: fetchError } = await supabase
-    .from('gastos')
+    .from('retiros')
     .select('id')
     .eq('id', id)
     .eq('user_id', user.id)
@@ -163,22 +154,21 @@ export async function DELETE(request, { params }) {
 
   if (fetchError || !existing) {
     return NextResponse.json(
-      { message: 'Gasto no encontrado' },
+      { message: 'Retiro no encontrado' },
       { status: 404 }
     )
   }
 
-  // Eliminar gasto
   const { error } = await supabase
-    .from('gastos')
+    .from('retiros')
     .delete()
     .eq('id', id)
     .eq('user_id', user.id)
 
   if (error) {
-    console.error('[gastos] error al eliminar:', error)
+    console.error('[retiros] error al eliminar:', error)
     return NextResponse.json(
-      { message: error.message || 'Error al eliminar gasto' },
+      { message: error.message || 'Error al eliminar retiro' },
       { status: 500 }
     )
   }

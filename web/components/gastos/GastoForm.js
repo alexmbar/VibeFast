@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
 import { crearGasto, actualizarGasto } from '@/lib/gastos/client'
+import { listarBancos } from '@/lib/bancos/client'
 import {
   CATEGORIAS,
   TIPOS_PAGO,
@@ -27,9 +29,17 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
+// Únicos tipo_pago que mapean 1:1 a un tipo de banco del catálogo. Para
+// los demás (transferencia, domiciliado, vales, otro) se muestra el
+// catálogo completo sin filtrar, igual criterio que la migración 014.
+const TIPOS_PAGO_BANCO = ['debito', 'credito']
+const SIN_BANCO = '__sin_banco__'
+
 export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({})
+  const [bancos, setBancos] = useState([])
+  const [loadingBancos, setLoadingBancos] = useState(false)
   const [formData, setFormData] = useState({
     monto: initialData ? centavosToPesos(initialData.monto) : '',
     fecha: initialData ? formatDate(initialData.fecha) : '',
@@ -37,7 +47,7 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
     categoria: initialData?.categoria || '',
     tipo_pago: initialData?.tipo_pago || '',
     tienda: initialData?.tienda || '',
-    banco: initialData?.banco || '',
+    banco_id: initialData?.banco_id ? String(initialData.banco_id) : '',
     notas: initialData?.notas || '',
   })
 
@@ -47,11 +57,47 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
   // El efectivo no tiene banco asociado: si el usuario cambia a "efectivo"
   // con un banco ya capturado, se limpia para no permitir la combinación.
   useEffect(() => {
-    if (esEfectivo && formData.banco) {
-      setFormData(prev => ({ ...prev, banco: '' }))
+    if (esEfectivo && formData.banco_id) {
+      setFormData(prev => ({ ...prev, banco_id: '' }))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [esEfectivo])
+
+  // Carga el catálogo de bancos del usuario, filtrado por tipo cuando el
+  // tipo_pago mapea 1:1 a un tipo de banco (débito/crédito).
+  useEffect(() => {
+    if (esEfectivo) {
+      setBancos([])
+      return
+    }
+    let cancelled = false
+    setLoadingBancos(true)
+    const filtroTipo = TIPOS_PAGO_BANCO.includes(formData.tipo_pago) ? formData.tipo_pago : undefined
+    listarBancos({ activo: true, ...(filtroTipo ? { tipo: filtroTipo } : {}) })
+      .then(data => {
+        if (!cancelled) setBancos(data)
+      })
+      .catch(() => {
+        if (!cancelled) setBancos([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingBancos(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [formData.tipo_pago, esEfectivo])
+
+  // Si el banco seleccionado ya no está entre las opciones cargadas (ej.
+  // cambió el tipo_pago de débito a crédito), se limpia la selección.
+  useEffect(() => {
+    if (!formData.banco_id || loadingBancos) return
+    const stillValid = bancos.some(b => String(b.id) === formData.banco_id)
+    if (!stillValid) {
+      setFormData(prev => ({ ...prev, banco_id: '' }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bancos, loadingBancos])
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -83,7 +129,7 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
         categoria: formData.categoria,
         tipo_pago: formData.tipo_pago,
         tienda: formData.tienda || null,
-        banco: esEfectivo ? null : formData.banco || null,
+        banco_id: esEfectivo ? null : formData.banco_id || null,
         notas: formData.notas || null,
       }
 
@@ -215,20 +261,37 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
 
         {/* Banco (opcional, no aplica si el pago es en efectivo) */}
         <div className="space-y-1.5">
-          <Label htmlFor="banco">Banco</Label>
-          <Input
-            id="banco"
-            type="text"
-            name="banco"
-            value={formData.banco}
-            onChange={handleChange}
-            placeholder="BBVA, Nu, etc."
-            disabled={esEfectivo}
-          />
+          <Label htmlFor="banco_id">Banco</Label>
+          <Select
+            value={formData.banco_id || SIN_BANCO}
+            onValueChange={(value) => handleSelectChange('banco_id', value === SIN_BANCO ? '' : value)}
+            disabled={esEfectivo || loadingBancos}
+          >
+            <SelectTrigger id="banco_id" className="w-full" aria-invalid={!!errors.banco_id}>
+              <SelectValue placeholder="Selecciona un banco" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={SIN_BANCO}>Ninguno</SelectItem>
+              {bancos.map(banco => (
+                <SelectItem key={banco.id} value={String(banco.id)}>
+                  {banco.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {esEfectivo && (
             <p className="text-xs text-muted-foreground">Efectivo no tiene banco asociado.</p>
           )}
-          {errors.banco && <p className="text-sm text-destructive">{errors.banco}</p>}
+          {!esEfectivo && !loadingBancos && bancos.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              No tienes bancos registrados.{' '}
+              <Link href="/bancos/create" className="underline hover:text-foreground">
+                Agrega uno
+              </Link>
+              .
+            </p>
+          )}
+          {errors.banco_id && <p className="text-sm text-destructive">{errors.banco_id}</p>}
         </div>
 
         {/* Notas (opcional) */}

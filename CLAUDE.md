@@ -12,7 +12,8 @@ foto de ticket o PDF del estado de cuenta) y se consultan en reportes web.
 | `tienda`      | `text`, nullable            | "OXXO", "Pemex"                          |
 | `categoria`   | enum cerrado                | 20 valores, lista abajo                  |
 | `tipo_pago`   | enum cerrado                | 7 valores, lista abajo                   |
-| `banco`       | `text`, nullable            | "BBVA", "Nu". Lista abierta a propósito  |
+| `banco_id`    | `bigint`, nullable, FK      | Referencia a `banco`. Ver "Catálogo de bancos" |
+| `banco`       | `text`, nullable            | Denormalizado desde `banco_id`, solo lectura para consumidores existentes (reportes, agente). No se escribe texto libre desde el formulario. |
 
 **Categorías:** supermercado, restaurantes, cafeteria, transporte, gasolina,
 salud, farmacia, hogar, servicios, renta, educacion, entretenimiento, ropa,
@@ -22,6 +23,37 @@ tecnologia, viajes, mascotas, regalos, impuestos, comisiones, otros.
 vales, otro.
 
 Los valores se guardan sin acentos; las etiquetas con acento son solo de UI.
+
+## Catálogo de bancos: entidad `banco`
+
+Antes `gasto.banco` era texto libre. Ahora es un catálogo por usuario
+(tabla `bancos`): cada fila es un instrumento financiero (cuenta o
+tarjeta), no solo un nombre — el mismo banco puede tener una fila
+`tipo = debito` y otra `tipo = credito` si el usuario los usa por
+separado (necesario para la futura fecha de corte de crédito, que
+solo aplica a instrumentos de crédito).
+
+| Campo    | Tipo                | Notas                                |
+|----------|---------------------|---------------------------------------|
+| `nombre` | `text`               | "BBVA", "Nu". Único por usuario+tipo  |
+| `tipo`   | enum cerrado         | `debito`, `credito`                   |
+| `activo` | `boolean`            | Soft delete: "eliminar" en la UI pone `activo = false`, no borra la fila (puede estar referenciada por gastos/retiros históricos) |
+
+Se gestiona en `/bancos`. `GastoForm` y `RetiroForm` seleccionan de este
+catálogo (`<select>`, nunca texto libre) — `RetiroForm` solo muestra
+bancos `tipo = debito`, porque un retiro sale de una cuenta de débito.
+
+## Retiros de efectivo y Cartera
+
+Un retiro (banco → efectivo en mano) no es un gasto: no consume valor,
+solo lo traslada. Vive en su propia tabla (`retiros`), nunca mezclado
+con `gastos`, para que los reportes de gasto real no se contaminen.
+
+**Cartera** (`/cartera`) es el saldo de efectivo disponible:
+`saldo = suma(retiros.monto) − suma(gastos.monto donde tipo_pago = efectivo)`.
+Se calcula en la base de datos vía la función `cartera_saldo()` (no en
+JS: sumar una lista paginada en el cliente da un saldo incorrecto en
+cuanto el historial pasa esa página).
 
 ## Reglas de esquema (no negociables)
 
@@ -40,12 +72,18 @@ Corolario: un monto negativo se **rechaza**, no se convierte a positivo. Casi
 siempre es un abono mal clasificado como cargo, y voltearle el signo inflaría
 el gasto del mes.
 
-3. **Si `tipo_pago` es `efectivo`, `banco` no debe ser seleccionable.** El
+3. **Si `tipo_pago` es `efectivo`, `banco_id` no debe ser seleccionable.** El
    efectivo no tiene banco asociado; dejar el campo habilitado permite
    capturas inconsistentes (p. ej. "efectivo" con banco "BBVA"). En el
-   formulario, deshabilita/oculta `banco` cuando `tipo_pago = efectivo`, y
-   valida también del lado del servidor que no llegue un `banco` no nulo
-   junto con `tipo_pago = efectivo`.
+   formulario, deshabilita/oculta el selector de banco cuando
+   `tipo_pago = efectivo`, y valida también del lado del servidor que no
+   llegue un `banco_id` no nulo junto con `tipo_pago = efectivo`.
+
+4. **Un retiro solo puede ser de un banco `tipo = debito`.** Retirar
+   efectivo de una tarjeta de crédito no es el mismo movimiento (sería un
+   cargo, no un traslado). Se valida en tres capas: el `<select>` de
+   `RetiroForm` solo lista bancos débito, la API lo revalida antes del
+   insert, y un trigger en `retiros` lo revalida en la base de datos.
 
 ## Convenciones de UI
 
@@ -114,11 +152,19 @@ abierta: se agregan conforme se vayan encontrando.
 1. Usuario envía mensaje a número WhatsApp: `+1 415 523 8886` (sandbox de Twilio)
 2. Webhook en `POST /api/webhooks/whatsapp` recibe el mensaje
 3. Se valida que el número está registrado en `profiles.phone`
-4. Se parsea el gasto:
+4. Si el mensaje empieza con "retiro", se captura como retiro de efectivo,
+   no como gasto:
+   - "retiro 2000 bbva" → extrae monto ($2000) y busca "bbva" entre los
+     bancos tipo débito del usuario (match exacto o por substring)
+   - Si no encuentra el banco en el catálogo, pide registrarlo primero en
+     `/bancos` (a diferencia de gastos, `banco_id` es obligatorio y no hay
+     fallback a texto libre)
+   - Solo texto por ahora, sin foto/PDF
+5. Si no, se parsea como gasto:
    - Texto simple: "500 oxxo" → extrae monto ($500), tienda (oxxo), categoría (supermercado)
    - Foto/PDF: OpenAI Vision extrae datos del ticket
-5. Se inserta en `gastos` con validaciones de BD
-6. Gasto aparece inmediatamente en `/gastos`
+6. Se inserta en `gastos` o `retiros` según corresponda, con validaciones de BD
+7. Aparece inmediatamente en `/gastos` o `/retiros`
 
 **Setup requerido:**
 - Teléfono del usuario debe estar en `profiles.phone` (formato: +52XXXXXXXXXX)
@@ -135,28 +181,24 @@ abierta: se agregan conforme se vayan encontrando.
 - Gastos se crean correctamente; el usuario ve confirmación en app al abrir `/gastos`
 
 **Archivos clave:**
-- `web/app/api/webhooks/whatsapp/route.js` — webhook de recepción
+- `web/app/api/webhooks/whatsapp/route.js` — webhook de recepción, decide gasto vs. retiro
 - `web/lib/gastos/whatsapp.js` — parseo de texto/imagen y creación de gastos
+- `web/lib/retiros/whatsapp.js` — parseo de texto y creación de retiros
 - `web/app/(app)/profile/page.js` — donde usuario agrega su teléfono
 
 ## TODO
 - Incluir carga y lectura de estados de cuenta "https://vibe-fast-web-omega.vercel.app/docs/recetas/chatbot-con-rag"
 
-- Retiros en efectivo: definir cómo se registran (¿tipo de movimiento aparte,
-  o `tipo_pago = efectivo` con `categoria` especial?) para no contaminar los
-  reportes de gasto real.
+- ~~Retiros en efectivo~~ — resuelto: tabla `retiros` separada de `gastos`
+  (migración `015_retiros.sql`), alimenta Cartera. Ver "Retiros de efectivo y
+  Cartera" arriba.
 
-- Catálogo de bancos por usuario: `banco` hoy es texto libre (ver tabla de
-  `gasto`); pasarlo a un catálogo porque no todos los usuarios tienen los
-  mismos bancos. Cada banco del catálogo es de tipo crédito o débito, y de
-  ahí se desprenden dos cosas:
+- ~~Catálogo de bancos por usuario~~ — resuelto para la parte de débito/
+  Cartera: `banco` pasó a catálogo (`013_bancos.sql`, `014_migrar_banco_a_
+  catalogo.sql`) con `tipo` débito/crédito. Cartera quedó como saldo
+  calculado (función `cartera_saldo()`), no como tabla propia. Pendiente:
   - Crédito: agregar fecha de corte (y probablemente fecha límite de pago)
     por banco, para reportes por periodo de corte en vez de mes calendario.
-  - Débito: permitir registrar un retiro como gasto (mismo mecanismo que el
-    ítem anterior de "retiros en efectivo") que alimente una sección nueva de
-    **Cartera**: el efectivo retirado deja de estar "en el banco" y pasa a
-    vivir ahí hasta que se gaste. Falta definir si Cartera es solo un saldo
-    calculado (retiros - gastos en efectivo) o una tabla propia.
 
 - CONFIGURACIONES: agregar un apartado para configurar zona horaria, tipo de
   moneda y formato de fecha (por usuario, no global). Ojo: `fecha` es `date`

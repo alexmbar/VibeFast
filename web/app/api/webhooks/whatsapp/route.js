@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { crearGastoDesdeWhatsApp } from '@/lib/gastos/whatsapp'
+import { crearRetiroDesdeWhatsApp } from '@/lib/retiros/whatsapp'
 
 export async function POST(request) {
   try {
@@ -27,13 +28,13 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: 'Usuario no encontrado' })
     }
 
-    const resultado = await crearGastoDesdeWhatsApp(
-      supabase,
-      user.id,
-      body,
-      mediaUrl,
-      mediaContentType
-    )
+    // Un mensaje que empieza con "retiro" se captura como retiro de
+    // efectivo, no como gasto; el resto del flujo no cambia.
+    const esRetiro = /^\s*retiro\b/i.test(body)
+
+    const resultado = esRetiro
+      ? await crearRetiroDesdeWhatsApp(supabase, user.id, body)
+      : await crearGastoDesdeWhatsApp(supabase, user.id, body, mediaUrl, mediaContentType)
 
     if (!resultado.success) {
       return NextResponse.json({ success: false })

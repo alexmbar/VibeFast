@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { validateGasto, CATEGORIAS, TIPOS_PAGO } from '@/lib/gastos/schema'
+import { validateRetiro } from '@/lib/retiros/schema'
 
 export async function GET(request) {
   const supabase = await createClient()
@@ -15,42 +15,31 @@ export async function GET(request) {
     )
   }
 
-  // Parsear query params
   const { searchParams } = new URL(request.url)
   const desde = searchParams.get('desde')
   const hasta = searchParams.get('hasta')
-  const categoria = searchParams.get('categoria')
-  const tipo_pago = searchParams.get('tipo_pago')
   const limit = parseInt(searchParams.get('limit') || '50')
   const offset = parseInt(searchParams.get('offset') || '0')
 
-  // Construir query
   let query = supabase
-    .from('gastos')
-    .select('*', { count: 'exact' })
+    .from('retiros')
+    .select('*, banco:bancos(id, nombre, tipo)', { count: 'exact' })
     .eq('user_id', user.id)
     .order('fecha', { ascending: false })
     .range(offset, offset + limit - 1)
 
-  // Aplicar filtros
   if (desde) {
     query = query.gte('fecha', desde)
   }
   if (hasta) {
     query = query.lte('fecha', hasta)
   }
-  if (categoria && CATEGORIAS.includes(categoria)) {
-    query = query.eq('categoria', categoria)
-  }
-  if (tipo_pago && TIPOS_PAGO.includes(tipo_pago)) {
-    query = query.eq('tipo_pago', tipo_pago)
-  }
 
   const { data, error, count } = await query
 
   if (error) {
     return NextResponse.json(
-      { message: 'Error al listar gastos' },
+      { message: 'Error al listar retiros' },
       { status: 500 }
     )
   }
@@ -83,8 +72,7 @@ export async function POST(request) {
     )
   }
 
-  // Validar datos
-  const validation = validateGasto(body)
+  const validation = validateRetiro(body)
   if (!validation.valid) {
     return NextResponse.json(
       { message: 'Datos inválidos', errors: validation.errors },
@@ -92,49 +80,45 @@ export async function POST(request) {
     )
   }
 
-  // Resolver banco_id contra el catálogo del usuario y derivar el nombre
-  // (columna banco denormalizada, la siguen leyendo listarGastos.js y
-  // reportes existentes).
-  let bancoId = null
-  let bancoNombre = null
-  if (body.banco_id) {
-    const { data: banco, error: bancoError } = await supabase
-      .from('bancos')
-      .select('id, nombre')
-      .eq('id', body.banco_id)
-      .eq('user_id', user.id)
-      .single()
+  // El banco debe existir, pertenecer al usuario, y ser de tipo débito.
+  // El trigger de BD es el respaldo duro; esta validación es la que da
+  // un mensaje de error legible en el formulario.
+  const { data: banco, error: bancoError } = await supabase
+    .from('bancos')
+    .select('id, tipo')
+    .eq('id', body.banco_id)
+    .eq('user_id', user.id)
+    .single()
 
-    if (bancoError || !banco) {
-      return NextResponse.json(
-        { message: 'Datos inválidos', errors: { banco_id: 'Banco inválido' } },
-        { status: 400 }
-      )
-    }
-    bancoId = banco.id
-    bancoNombre = banco.nombre
+  if (bancoError || !banco) {
+    return NextResponse.json(
+      { message: 'Datos inválidos', errors: { banco_id: 'Banco inválido' } },
+      { status: 400 }
+    )
   }
 
-  // Insertar gasto
+  if (banco.tipo !== 'debito') {
+    return NextResponse.json(
+      { message: 'Datos inválidos', errors: { banco_id: 'El banco de un retiro debe ser de tipo débito' } },
+      { status: 400 }
+    )
+  }
+
   const { data, error } = await supabase
-    .from('gastos')
+    .from('retiros')
     .insert({
       user_id: user.id,
       monto: body.monto,
       fecha: body.fecha,
-      categoria: body.categoria,
-      tipo_pago: body.tipo_pago,
-      tienda: body.tienda || null,
-      banco_id: bancoId,
-      banco: bancoNombre,
+      banco_id: banco.id,
       notas: body.notas || null,
     })
-    .select()
+    .select('*, banco:bancos(id, nombre, tipo)')
     .single()
 
   if (error) {
     return NextResponse.json(
-      { message: 'Error al crear gasto' },
+      { message: 'Error al crear retiro' },
       { status: 500 }
     )
   }
