@@ -4,7 +4,7 @@ import config from "@/config"
 import { getUser } from "@/lib/supabase/server"
 import UserMenu from "@/components/auth/UserMenu"
 import AppNav from "@/components/layout/AppNav"
-import { AppThemeProvider, AppThemeToggle } from "@/components/layout/AppTheme"
+import { AppThemeProvider } from "@/components/layout/AppTheme"
 import Logo from "@/components/Logo"
 
 // Layout de la zona privada. El middleware ya bloquea sin sesión,
@@ -22,10 +22,7 @@ export default async function AppLayout({ children }) {
               <Logo className="size-7" />
               {config.brand.logoText}
             </Link>
-            <div className="flex items-center gap-1">
-              <AppThemeToggle />
-              <UserMenu user={user} />
-            </div>
+            <UserMenu user={user} />
           </div>
         </header>
 
