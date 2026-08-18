@@ -3,6 +3,32 @@
 App de control de gastos personales. Los gastos entran por WhatsApp (texto,
 foto de ticket o PDF del estado de cuenta) y se consultan en reportes web.
 
+## Stack
+
+- **Monorepo**: Yarn workspaces (`yarn@1.22.x`) con dos paquetes: `web`
+  (la app) y `docs` (sitio de documentación, MDX vía `next-mdx-remote` +
+  `shiki`).
+- **Framework**: Next.js 15 (App Router) + React 19.
+- **Base de datos / auth**: Supabase (Postgres, Auth, RLS) vía
+  `@supabase/supabase-js` y `@supabase/ssr`. Migraciones en
+  `supabase/migrations/`.
+- **UI**: Tailwind CSS 4 + shadcn/ui (componentes en `web/components/ui`,
+  primitivas `@base-ui/react`, `class-variance-authority`, `tailwind-merge`)
+  y daisyUI. Iconos con `lucide-react`.
+- **Gráficas**: VisActor VChart (`@visactor/vchart`, `@visactor/react-vchart`).
+- **IA**: OpenAI (`openai`, Vision para tickets/PDFs) y LangChain/LangGraph +
+  MCP SDK (`@langchain/core`, `@langchain/langgraph`, `@langchain/openai`,
+  `@modelcontextprotocol/sdk`) para el agente y RAG.
+- **WhatsApp**: Kapso, integrado por REST/webhook directo (validación HMAC
+  en `web/lib/whatsapp/kapso.js`), sin SDK.
+- **Email**: Resend + `@react-email/components`.
+- **Validación**: Zod.
+- **Analytics**: Vercel Analytics + PostHog (`posthog-js`), configurados en
+  el `package.json` raíz.
+- **Hosting/deploy**: Vercel (deploy automático al hacer commit al entorno
+  de pruebas — ver "Entorno de pruebas").
+- **Lenguaje**: JavaScript (JSX), no TypeScript, salvo config (`jsconfig.json`).
+
 ## Entidad principal: `gasto`
 
 | Campo         | Tipo                        | Notas                                    |
@@ -146,11 +172,18 @@ abierta: se agregan conforme se vayan encontrando.
 
 ## Integración WhatsApp
 
-**Estado:** Captura automática de gastos funcional
+**Estado:** Captura automática de gastos funcional, con confirmación de
+vuelta por WhatsApp. Antes vivía sobre el sandbox de Twilio; se migró a
+Kapso porque el sandbox de Twilio no permite mandar respuestas
+automáticas sin pasar por la verificación de negocio de Meta, y el
+"instant setup" de Kapso (número pre-verificado, Meta App administrada
+por Kapso) sí lo permite sin ese trámite.
 
 **Flujo:**
-1. Usuario envía mensaje a número WhatsApp: `+1 415 523 8886` (sandbox de Twilio)
-2. Webhook en `POST /api/webhooks/whatsapp` recibe el mensaje
+1. Usuario envía mensaje al número de WhatsApp conectado en Kapso
+2. Kapso manda un webhook (JSON, evento `whatsapp.message.received`) a
+   `POST /api/webhooks/whatsapp`, firmado con HMAC-SHA256
+   (`X-Webhook-Signature`); el webhook rechaza requests sin firma válida
 3. Se valida que el número está registrado en `profiles.phone`
 4. Si el mensaje empieza con "retiro", se captura como retiro de efectivo,
    no como gasto:
@@ -162,26 +195,26 @@ abierta: se agregan conforme se vayan encontrando.
    - Solo texto por ahora, sin foto/PDF
 5. Si no, se parsea como gasto:
    - Texto simple: "500 oxxo" → extrae monto ($500), tienda (oxxo), categoría (supermercado)
-   - Foto/PDF: OpenAI Vision extrae datos del ticket
+   - Foto/PDF: OpenAI Vision extrae datos del ticket (descargado de Kapso con la API key)
 6. Se inserta en `gastos` o `retiros` según corresponda, con validaciones de BD
-7. Aparece inmediatamente en `/gastos` o `/retiros`
+7. Se manda una confirmación (o el mensaje de error) de vuelta por WhatsApp,
+   y aparece inmediatamente en `/gastos` o `/retiros`
 
 **Setup requerido:**
 - Teléfono del usuario debe estar en `profiles.phone` (formato: +52XXXXXXXXXX)
 - Variables de entorno en Vercel:
-  - `TWILIO_ACCOUNT_SID`
-  - `TWILIO_AUTH_TOKEN`
-  - `TWILIO_WHATSAPP_NUMBER`
+  - `KAPSO_API_KEY`
+  - `KAPSO_PHONE_NUMBER_ID`
+  - `KAPSO_WEBHOOK_SECRET`
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `SUPABASE_SERVICE_ROLE_KEY`
-
-**Limitación conocida:**
-- Respuestas automáticas a WhatsApp no funcionan en sandbox de Twilio
-- Requiere upgrade a WhatsApp Business Account para habilitar (no implementado)
-- Gastos se crean correctamente; el usuario ve confirmación en app al abrir `/gastos`
+- En el dashboard de Kapso, el webhook del número debe apuntar a
+  `https://<tu-dominio>/api/webhooks/whatsapp` con el evento
+  "Message received"
 
 **Archivos clave:**
-- `web/app/api/webhooks/whatsapp/route.js` — webhook de recepción, decide gasto vs. retiro
+- `web/app/api/webhooks/whatsapp/route.js` — webhook de recepción, valida firma, decide gasto vs. retiro, manda confirmación
+- `web/lib/whatsapp/kapso.js` — verificación de firma, envío de mensajes y descarga de media vía API de Kapso
 - `web/lib/gastos/whatsapp.js` — parseo de texto/imagen y creación de gastos
 - `web/lib/retiros/whatsapp.js` — parseo de texto y creación de retiros
 - `web/app/(app)/profile/page.js` — donde usuario agrega su teléfono

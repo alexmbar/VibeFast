@@ -1,5 +1,6 @@
 import OpenAI from 'openai'
 import { CATEGORIAS, TIPOS_PAGO } from './schema'
+import { descargarMediaKapso } from '@/lib/whatsapp/kapso'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -97,9 +98,8 @@ export async function crearGastoDesdeWhatsApp(supabase, userId, texto, mediaUrl,
 // Parsear imagen/PDF con OpenAI Vision
 async function parsearMediaConOpenAI(mediaUrl, mediaContentType) {
   try {
-    // Descargar la imagen
-    const response = await fetch(mediaUrl)
-    const buffer = await response.arrayBuffer()
+    // Descargar la imagen (requiere la API key de Kapso)
+    const buffer = await descargarMediaKapso(mediaUrl)
     const base64 = Buffer.from(buffer).toString('base64')
 
     // Determinar media type

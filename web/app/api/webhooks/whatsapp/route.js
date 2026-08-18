@@ -2,16 +2,37 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { crearGastoDesdeWhatsApp } from '@/lib/gastos/whatsapp'
 import { crearRetiroDesdeWhatsApp } from '@/lib/retiros/whatsapp'
+import { verificarFirmaKapso, enviarMensajeWhatsApp } from '@/lib/whatsapp/kapso'
+
+const formatoMoneda = new Intl.NumberFormat('es-MX', {
+  style: 'currency',
+  currency: 'MXN',
+})
 
 export async function POST(request) {
   try {
-    const formData = await request.formData()
-    const from = formData.get('From')
-    const body = formData.get('Body') || ''
-    const mediaUrl = formData.get('MediaUrl0')
-    const mediaContentType = formData.get('MediaContentType0')
+    const rawBody = await request.text()
+    const signature = request.headers.get('x-webhook-signature')
 
-    const userPhone = from.replace('whatsapp:', '')
+    if (!verificarFirmaKapso(rawBody, signature)) {
+      return NextResponse.json({ success: false, error: 'Firma invalida' }, { status: 401 })
+    }
+
+    const payload = JSON.parse(rawBody)
+    const eventType = request.headers.get('x-webhook-event')
+    if (eventType && eventType !== 'whatsapp.message.received') {
+      return NextResponse.json({ success: true, skipped: true })
+    }
+
+    const message = payload.message
+    if (!message || !message.from) {
+      return NextResponse.json({ success: true, skipped: true })
+    }
+
+    const userPhone = `+${message.from}`
+    const body = message.text?.body || message.image?.caption || message.document?.caption || ''
+    const mediaUrl = message.kapso?.media_data?.url
+    const mediaContentType = message.kapso?.media_data?.content_type
 
     // Obtener usuario por teléfono (usar Service Role Key para saltear RLS)
     const supabase = createClient(
@@ -36,12 +57,12 @@ export async function POST(request) {
       ? await crearRetiroDesdeWhatsApp(supabase, user.id, body)
       : await crearGastoDesdeWhatsApp(supabase, user.id, body, mediaUrl, mediaContentType)
 
+    await responderWhatsApp(userPhone, esRetiro, resultado)
+
     if (!resultado.success) {
       return NextResponse.json({ success: false })
     }
 
-    // Gasto capturado exitosamente
-    // TODO: Enviar confirmación a WhatsApp (requiere resolver autenticación Twilio)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error en webhook WhatsApp:', error)
@@ -49,6 +70,34 @@ export async function POST(request) {
       { message: 'Error interno' },
       { status: 500 }
     )
+  }
+}
+
+// Confirma o reporta el error de vuelta al usuario por WhatsApp. No
+// bloquea el procesamiento del webhook si el envío falla.
+async function responderWhatsApp(userPhone, esRetiro, resultado) {
+  try {
+    if (!resultado.success) {
+      await enviarMensajeWhatsApp(userPhone, resultado.error)
+      return
+    }
+
+    if (esRetiro) {
+      const { retiro, banco } = resultado
+      await enviarMensajeWhatsApp(
+        userPhone,
+        `Retiro registrado: ${formatoMoneda.format(retiro.monto / 100)} de ${banco.nombre}`
+      )
+    } else {
+      const { gasto } = resultado
+      const destino = gasto.tienda || gasto.categoria
+      await enviarMensajeWhatsApp(
+        userPhone,
+        `Gasto registrado: ${formatoMoneda.format(gasto.monto / 100)} en ${destino}`
+      )
+    }
+  } catch (error) {
+    console.error('Error mandando confirmacion por WhatsApp:', error)
   }
 }
 

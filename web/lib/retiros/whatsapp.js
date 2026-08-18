@@ -114,6 +114,7 @@ export async function crearRetiroDesdeWhatsApp(supabase, userId, texto) {
     return {
       success: true,
       retiro: data,
+      banco,
     }
   } catch (error) {
     console.error('Error en crearRetiroDesdeWhatsApp:', error)
