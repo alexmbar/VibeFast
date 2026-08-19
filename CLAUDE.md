@@ -239,18 +239,21 @@ por Kapso) sí lo permite sin ese trámite.
   cómo se interpreta la hora de captura por WhatsApp antes de guardar el
   `date`, no a que `fecha` pase a `timestamptz`.
 
-- Ingresos recurrentes: agregar entidad de ingreso tipo "nómina", configurable
-  por día(s) de la semana (p. ej. cada viernes, o quincenal). Falta definir
-  monto fijo vs. variable, y si el motor de recurrencia genera los registros
-  por adelantado o al vuelo al consultar un reporte.
+- Control de ingresos: agregar entidad de ingreso con dos modalidades de
+  captura — recurrente ("nómina", configurable por día(s) de la semana,
+  p. ej. cada viernes o quincenal; falta definir monto fijo vs. variable, y
+  si el motor de recurrencia genera los registros por adelantado o al vuelo
+  al consultar un reporte) y no recurrente (bonos, reembolsos, ventas,
+  regalos, capturados manualmente con monto, fecha y una nota/categoría
+  opcional). "Control" no es solo capturar: también hace falta una vista de
+  ingresos (equivalente a `/gastos` pero para ingresos) y el balance neto
+  (ingresos − gastos) en dashboard/reportes, que hoy solo muestran el lado
+  de gasto.
 
-- Ingresos no recurrentes: ingresos puntuales (bonos, reembolsos, ventas,
-  regalos) capturados manualmente con monto, fecha y una nota/categoría
-  opcional.
-
-- Gastos recurrentes: mismo tipo de recurrencia que "ingresos recurrentes"
-  pero para gastos fijos (renta, suscripciones, servicios). Reusar el mismo
-  motor de recurrencia en vez de duplicarlo entre ingresos y gastos.
+- Gastos recurrentes: mismo tipo de recurrencia que la parte recurrente de
+  "control de ingresos" pero para gastos fijos (renta, suscripciones,
+  servicios). Reusar el mismo motor de recurrencia en vez de duplicarlo
+  entre ingresos y gastos.
 
 - Apartados con rendimiento (estilo Nu): sección para crear "apartados" de
   dinero separados del gasto corriente, con una tasa de interés configurable

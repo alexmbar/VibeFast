@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Plus, Wallet, Loader2 } from 'lucide-react'
+import { Plus, Wallet, TrendingUp, Loader2 } from 'lucide-react'
 import { listarGastos } from '@/lib/gastos/client'
+import { obtenerBalanceNeto } from '@/lib/ingresos/client'
 import { formatMonto } from '@/lib/gastos/schema'
 import CategoriaChart from '@/components/reportes/CategoriaChart'
 import TendenciaChart from '@/components/reportes/TendenciaChart'
@@ -29,19 +30,22 @@ export default function DashboardPage() {
   const [gastosMes, setGastosMes] = useState([])
   const [gastosSemana, setGastosSemana] = useState([])
   const [recientes, setRecientes] = useState([])
+  const [balanceNeto, setBalanceNeto] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
 
   async function loadDatos() {
     setIsLoading(true)
     try {
-      const [mes, semana, ultimos] = await Promise.all([
+      const [mes, semana, ultimos, balance] = await Promise.all([
         listarGastos({ desde: toISODate(INICIO_MES), hasta: toISODate(HOY), limit: 1000 }),
         listarGastos({ desde: toISODate(INICIO_SEMANA), hasta: toISODate(HOY), limit: 1000 }),
         listarGastos({ limit: 8 }),
+        obtenerBalanceNeto({ desde: toISODate(INICIO_MES), hasta: toISODate(HOY) }),
       ])
       setGastosMes(mes.gastos)
       setGastosSemana(semana.gastos)
       setRecientes(ultimos.gastos)
+      setBalanceNeto(balance.balance)
     } catch (error) {
       console.error('Error loading dashboard:', error)
     } finally {
@@ -94,20 +98,39 @@ export default function DashboardPage() {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3 text-sm font-semibold uppercase text-muted-foreground">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
-              <Wallet className="size-4.5" />
-            </span>
-            Gasto Total Mensual
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-4xl font-bold font-mono capitalize">{formatMonto(totalMes)}</p>
-          <p className="text-xs text-muted-foreground mt-1 capitalize">{MES_LABEL} · {gastosMes.length} registros</p>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-sm font-semibold uppercase text-muted-foreground">
+              <span className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                <Wallet className="size-4.5" />
+              </span>
+              Gasto Total Mensual
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-4xl font-bold font-mono capitalize">{formatMonto(totalMes)}</p>
+            <p className="text-xs text-muted-foreground mt-1 capitalize">{MES_LABEL} · {gastosMes.length} registros</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-sm font-semibold uppercase text-muted-foreground">
+              <span className={`flex size-9 items-center justify-center rounded-lg ${balanceNeto >= 0 ? 'bg-emerald-400/15 text-emerald-500' : 'bg-destructive/15 text-destructive'}`}>
+                <TrendingUp className="size-4.5" />
+              </span>
+              Balance Neto
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className={`text-4xl font-bold font-mono ${balanceNeto < 0 ? 'text-destructive' : ''}`}>
+              {formatMonto(balanceNeto)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1 capitalize">{MES_LABEL} · ingresos − gastos</p>
+          </CardContent>
+        </Card>
+      </div>
 
       {gastosMes.length === 0 && gastosSemana.length === 0 && recientes.length === 0 ? (
         <div className="text-center py-12">
