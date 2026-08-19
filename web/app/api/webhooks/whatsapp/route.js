@@ -41,12 +41,16 @@ export async function POST(request) {
     )
     const { data: user } = await supabase
       .from('profiles')
-      .select('id')
+      .select('id, full_name, whatsapp_confirmado_at')
       .eq('phone', userPhone)
       .single()
 
     if (!user) {
       return NextResponse.json({ success: false, error: 'Usuario no encontrado' })
+    }
+
+    if (!user.whatsapp_confirmado_at) {
+      await confirmarPrimerMensaje(supabase, user, userPhone)
     }
 
     // Un mensaje que empieza con "retiro" se captura como retiro de
@@ -70,6 +74,29 @@ export async function POST(request) {
       { message: 'Error interno' },
       { status: 500 }
     )
+  }
+}
+
+// Saludo de bienvenida, una sola vez, en el primer mensaje que manda
+// el usuario después de vincular su teléfono en /profile. No se puede
+// mandar en el momento del guardado del teléfono (acción del sitio,
+// sin sesión de WhatsApp abierta) — Meta solo permite que el negocio
+// escriba primero dentro de una sesión de servicio o vía plantilla
+// aprobada, así que se aprovecha este primer mensaje entrante. No
+// bloquea el procesamiento normal del mensaje si falla.
+async function confirmarPrimerMensaje(supabase, user, userPhone) {
+  try {
+    const nombre = user.full_name ? `, ${user.full_name.split(' ')[0]}` : ''
+    await enviarMensajeWhatsApp(
+      userPhone,
+      `¡Hola${nombre}! Tu WhatsApp quedó vinculado. A partir de ahora puedes mandarme tus gastos así: "500 oxxo", una foto del ticket, o "retiro 2000 bbva" si sacaste efectivo.`
+    )
+    await supabase
+      .from('profiles')
+      .update({ whatsapp_confirmado_at: new Date().toISOString() })
+      .eq('id', user.id)
+  } catch (error) {
+    console.error('Error mandando bienvenida de WhatsApp:', error)
   }
 }
 
