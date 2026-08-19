@@ -43,7 +43,11 @@ export default function PhoneGate({ userId }) {
       .eq("id", userId)
 
     if (updateError) {
-      setError(updateError.message)
+      setError(
+        updateError.code === "23505"
+          ? "Ese número ya está registrado en otra cuenta."
+          : updateError.message
+      )
       setSaving(false)
       return
     }
