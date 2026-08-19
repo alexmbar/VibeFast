@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { Pencil, Trash2, Loader2 } from 'lucide-react'
-import { eliminarGasto } from '@/lib/gastos/client'
+import { Pencil, Trash2, Loader2, Check } from 'lucide-react'
+import { eliminarGasto, actualizarGasto } from '@/lib/gastos/client'
 import { CATEGORIA_LABELS, TIPO_PAGO_LABELS, formatMonto, formatDate, extractHora } from '@/lib/gastos/schema'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   Table,
   TableHeader,
@@ -38,8 +39,9 @@ function compararGastos(a, b, columna) {
   }
 }
 
-export default function GastoTable({ gastos, onDelete, isLoading }) {
+export default function GastoTable({ gastos, onDelete, onUpdate, isLoading }) {
   const [deleting, setDeleting] = useState(null)
+  const [confirming, setConfirming] = useState(null)
   const [sortBy, setSortBy] = useState('fecha')
   const [sortDir, setSortDir] = useState('desc')
 
@@ -70,6 +72,21 @@ export default function GastoTable({ gastos, onDelete, isLoading }) {
       alert(error.message)
     } finally {
       setDeleting(null)
+    }
+  }
+
+  // Confirma una fila generada por una recurrencia (monto_confirmado=false):
+  // un PATCH vacío marca la fila como revisada sin tocar el monto (ver
+  // web/app/api/gastos/[id]/route.js).
+  async function handleConfirm(id) {
+    setConfirming(id)
+    try {
+      const actualizado = await actualizarGasto(id, {})
+      onUpdate?.(actualizado)
+    } catch (error) {
+      alert(error.message)
+    } finally {
+      setConfirming(null)
     }
   }
 
@@ -121,11 +138,28 @@ export default function GastoTable({ gastos, onDelete, isLoading }) {
             <TableCell className="text-sm">{gasto.tienda || '-'}</TableCell>
             <TableCell className="text-sm">{CATEGORIA_LABELS[gasto.categoria]}</TableCell>
             <TableCell className="text-sm">{TIPO_PAGO_LABELS[gasto.tipo_pago]}</TableCell>
-            <TableCell className="text-right font-mono font-semibold tabular-nums">
-              {formatMonto(gasto.monto)}
+            <TableCell className="text-right">
+              <div className="flex flex-col items-end gap-1">
+                <span className="font-mono font-semibold tabular-nums">{formatMonto(gasto.monto)}</span>
+                {gasto.monto_confirmado === false && (
+                  <Badge variant="outline" className="text-muted-foreground">Pendiente</Badge>
+                )}
+              </div>
             </TableCell>
             <TableCell>
               <div className="flex gap-1 justify-center">
+                {gasto.monto_confirmado === false && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => handleConfirm(gasto.id)}
+                    disabled={confirming === gasto.id}
+                    title="Confirmar monto"
+                    aria-busy={confirming === gasto.id}
+                  >
+                    {confirming === gasto.id ? <Loader2 className="animate-spin" /> : <Check />}
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon-sm"

@@ -2,12 +2,13 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Pencil, Trash2, Loader2 } from 'lucide-react'
-import { eliminarIngreso } from '@/lib/ingresos/client'
+import { Pencil, Trash2, Loader2, Check } from 'lucide-react'
+import { eliminarIngreso, actualizarIngreso } from '@/lib/ingresos/client'
 import { CATEGORIA_LABELS } from '@/lib/ingresos/schema'
 import { formatMonto, formatDate } from '@/lib/gastos/schema'
 import { useSortableTable } from '@/lib/hooks/useSortableTable'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   Table,
   TableHeader,
@@ -36,8 +37,9 @@ function compararIngresos(a, b, columna) {
   }
 }
 
-export default function IngresoTable({ ingresos, onDelete, isLoading }) {
+export default function IngresoTable({ ingresos, onDelete, onUpdate, isLoading }) {
   const [deleting, setDeleting] = useState(null)
+  const [confirming, setConfirming] = useState(null)
   const { sorted, sortBy, sortDir, handleSort } = useSortableTable(ingresos, compararIngresos)
 
   async function handleDelete(id) {
@@ -51,6 +53,21 @@ export default function IngresoTable({ ingresos, onDelete, isLoading }) {
       alert(error.message)
     } finally {
       setDeleting(null)
+    }
+  }
+
+  // Confirma una fila generada por una recurrencia (monto_confirmado=false):
+  // un PATCH vacío marca la fila como revisada sin tocar el monto (ver
+  // web/app/api/ingresos/[id]/route.js).
+  async function handleConfirm(id) {
+    setConfirming(id)
+    try {
+      const actualizado = await actualizarIngreso(id, {})
+      onUpdate?.(actualizado)
+    } catch (error) {
+      alert(error.message)
+    } finally {
+      setConfirming(null)
     }
   }
 
@@ -97,11 +114,28 @@ export default function IngresoTable({ ingresos, onDelete, isLoading }) {
           <TableRow key={ingreso.id}>
             <TableCell className="font-mono text-sm">{formatDate(ingreso.fecha)}</TableCell>
             <TableCell className="text-sm">{CATEGORIA_LABELS[ingreso.categoria]}</TableCell>
-            <TableCell className="text-right font-mono font-semibold tabular-nums">
-              {formatMonto(ingreso.monto)}
+            <TableCell className="text-right">
+              <div className="flex flex-col items-end gap-1">
+                <span className="font-mono font-semibold tabular-nums">{formatMonto(ingreso.monto)}</span>
+                {ingreso.monto_confirmado === false && (
+                  <Badge variant="outline" className="text-muted-foreground">Pendiente</Badge>
+                )}
+              </div>
             </TableCell>
             <TableCell>
               <div className="flex gap-1 justify-center">
+                {ingreso.monto_confirmado === false && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => handleConfirm(ingreso.id)}
+                    disabled={confirming === ingreso.id}
+                    title="Confirmar monto"
+                    aria-busy={confirming === ingreso.id}
+                  >
+                    {confirming === ingreso.id ? <Loader2 className="animate-spin" /> : <Check />}
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon-sm"

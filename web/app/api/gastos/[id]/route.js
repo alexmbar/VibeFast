@@ -76,6 +76,10 @@ export async function PATCH(request, { params }) {
   // Validar datos si están presentes
   const dataToUpdate = {
     ...body,
+    // Cualquier PATCH implica que el usuario revisó la fila -- así se
+    // "confirma" una fila generada por una recurrencia sin necesitar un
+    // endpoint aparte (ver web/lib/recurrencias).
+    monto_confirmado: true,
   }
 
   if (body.monto || body.fecha || body.categoria || body.tipo_pago || body.banco_id !== undefined) {

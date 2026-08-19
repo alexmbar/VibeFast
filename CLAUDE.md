@@ -81,6 +81,28 @@ Se calcula en la base de datos vía la función `cartera_saldo()` (no en
 JS: sumar una lista paginada en el cliente da un saldo incorrecto en
 cuanto el historial pasa esa página).
 
+## Recurrencias
+
+Motor compartido para ingresos y gastos que se repiten (nómina, renta,
+suscripciones). Una fila en `recurrencias` es la regla ("cada viernes $X",
+"el día 5 $Y"), no una ocurrencia: un cron diario
+(`web/app/api/cron/generar-recurrencias`, programado en `web/vercel.json`)
+genera **por adelantado** las filas reales en `gastos`/`ingresos`,
+enlazadas por `recurrencia_id`.
+
+El `monto_default` de la regla es solo un sugerido, no el monto real de
+cada ocurrencia (nómina/renta pueden variar): cada fila generada nace con
+`monto_confirmado = false` — badge "Pendiente" en `/gastos` e `/ingresos` —
+hasta que el usuario la revisa. Cualquier `PATCH` manual sobre la fila
+(editarla o el botón "Confirmar" de la tabla, que no toca el monto) la
+marca como confirmada.
+
+Frecuencias soportadas: semanal (`dia_semana`, 0=domingo..6=sabado),
+mensual y quincenal (`dias_mes`: uno o dos días del mes; si el mes es más
+corto se usa el último día). Se gestiona en `/recurrencias`; sigue las
+mismas reglas de esquema que gastos/ingresos (monto en centavos, fecha
+`date`, efectivo sin banco).
+
 ## Reglas de esquema (no negociables)
 
 Estas dos ya causaron bugs. No las cambies por los defaults del generador de
@@ -246,21 +268,16 @@ por Kapso) sí lo permite sin ese trámite.
   cómo se interpreta la hora de captura por WhatsApp antes de guardar el
   `date`, no a que `fecha` pase a `timestamptz`.
 
-- Control de ingresos: agregar entidad de ingreso con dos modalidades de
-  captura — recurrente ("nómina", configurable por día(s) de la semana,
-  p. ej. cada viernes o quincenal; falta definir monto fijo vs. variable, y
-  si el motor de recurrencia genera los registros por adelantado o al vuelo
-  al consultar un reporte) y no recurrente (bonos, reembolsos, ventas,
-  regalos, capturados manualmente con monto, fecha y una nota/categoría
-  opcional). "Control" no es solo capturar: también hace falta una vista de
-  ingresos (equivalente a `/gastos` pero para ingresos) y el balance neto
-  (ingresos − gastos) en dashboard/reportes, que hoy solo muestran el lado
-  de gasto.
+- ~~Control de ingresos~~ — resuelto: captura manual (monto, fecha,
+  categoría/nota, tabla `ingresos`, migración `019_ingresos.sql`), vista
+  `/ingresos`, balance neto en dashboard (`balance_neto()`,
+  `020_balance_neto_function.sql`), y la modalidad recurrente ("nómina"
+  cada viernes o quincenal, monto variable con default) vía el motor de
+  recurrencia compartido — ver "Recurrencias" arriba.
 
-- Gastos recurrentes: mismo tipo de recurrencia que la parte recurrente de
-  "control de ingresos" pero para gastos fijos (renta, suscripciones,
-  servicios). Reusar el mismo motor de recurrencia en vez de duplicarlo
-  entre ingresos y gastos.
+- ~~Gastos recurrentes~~ — resuelto: reusa el mismo motor de recurrencia
+  que ingresos (tabla `recurrencias`, migración `021_recurrencias.sql`) en
+  vez de duplicarlo — ver "Recurrencias" arriba.
 
 - Apartados con rendimiento (estilo Nu): sección para crear "apartados" de
   dinero separados del gasto corriente, con una tasa de interés configurable

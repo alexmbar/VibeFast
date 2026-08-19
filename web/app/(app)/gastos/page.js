@@ -60,6 +60,10 @@ export default function GastosPage() {
     setGastos(prev => prev.filter(g => g.id !== id))
   }
 
+  function handleUpdate(actualizado) {
+    setGastos(prev => prev.map(g => (g.id === actualizado.id ? actualizado : g)))
+  }
+
   const hayFiltros = filters.desde || filters.hasta || filters.categoria || filters.tipo_pago
 
   function exportUrl(format) {
@@ -173,7 +177,7 @@ export default function GastosPage() {
       {/* Tabla de gastos */}
       <Card>
         <CardContent>
-          <GastoTable gastos={gastos} onDelete={handleDelete} isLoading={isLoading} />
+          <GastoTable gastos={gastos} onDelete={handleDelete} onUpdate={handleUpdate} isLoading={isLoading} />
         </CardContent>
       </Card>
     </div>

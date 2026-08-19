@@ -53,6 +53,10 @@ export default function IngresosPage() {
     setIngresos(prev => prev.filter(i => i.id !== id))
   }
 
+  function handleUpdate(actualizado) {
+    setIngresos(prev => prev.map(i => (i.id === actualizado.id ? actualizado : i)))
+  }
+
   const hayFiltros = filters.desde || filters.hasta || filters.categoria
 
   return (
@@ -125,7 +129,7 @@ export default function IngresosPage() {
 
       <Card>
         <CardContent>
-          <IngresoTable ingresos={ingresos} onDelete={handleDelete} isLoading={isLoading} />
+          <IngresoTable ingresos={ingresos} onDelete={handleDelete} onUpdate={handleUpdate} isLoading={isLoading} />
         </CardContent>
       </Card>
     </div>

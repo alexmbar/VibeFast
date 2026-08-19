@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { validateIngreso } from '@/lib/ingresos/schema'
+import { validateRecurrencia } from '@/lib/recurrencias/schema'
 
 export async function GET(request, { params }) {
   const supabase = await createClient()
@@ -17,7 +17,7 @@ export async function GET(request, { params }) {
 
   const { id } = await params
   const { data, error } = await supabase
-    .from('ingresos')
+    .from('recurrencias')
     .select('*')
     .eq('id', id)
     .eq('user_id', user.id)
@@ -25,7 +25,7 @@ export async function GET(request, { params }) {
 
   if (error || !data) {
     return NextResponse.json(
-      { message: 'Ingreso no encontrado' },
+      { message: 'Recurrencia no encontrada' },
       { status: 404 }
     )
   }
@@ -49,7 +49,7 @@ export async function PATCH(request, { params }) {
   const { id } = await params
 
   const { data: existing, error: fetchError } = await supabase
-    .from('ingresos')
+    .from('recurrencias')
     .select('*')
     .eq('id', id)
     .eq('user_id', user.id)
@@ -57,7 +57,7 @@ export async function PATCH(request, { params }) {
 
   if (fetchError || !existing) {
     return NextResponse.json(
-      { message: 'Ingreso no encontrado' },
+      { message: 'Recurrencia no encontrada' },
       { status: 404 }
     )
   }
@@ -72,26 +72,64 @@ export async function PATCH(request, { params }) {
     )
   }
 
-  if (body.monto || body.fecha || body.categoria) {
-    const validation = validateIngreso({
-      monto: body.monto || existing.monto,
-      fecha: body.fecha || existing.fecha,
-      categoria: body.categoria || existing.categoria,
-    })
-    if (!validation.valid) {
+  const merged = {
+    tipo: body.tipo ?? existing.tipo,
+    frecuencia: body.frecuencia ?? existing.frecuencia,
+    dia_semana: body.frecuencia ? body.dia_semana : existing.dia_semana,
+    dias_mes: body.frecuencia ? body.dias_mes : existing.dias_mes,
+    monto_default: body.monto_default ?? existing.monto_default,
+    categoria: body.categoria ?? existing.categoria,
+    tipo_pago: body.tipo_pago ?? existing.tipo_pago,
+    banco_id: body.banco_id !== undefined ? body.banco_id : existing.banco_id,
+    fecha_inicio: body.fecha_inicio ?? existing.fecha_inicio,
+    fecha_fin: body.fecha_fin !== undefined ? body.fecha_fin : existing.fecha_fin,
+  }
+
+  const validation = validateRecurrencia(merged)
+  if (!validation.valid) {
+    return NextResponse.json(
+      { message: 'Datos inválidos', errors: validation.errors },
+      { status: 400 }
+    )
+  }
+
+  const esGasto = merged.tipo === 'gasto'
+  const dataToUpdate = { ...body }
+
+  if (esGasto && merged.banco_id) {
+    const { data: banco, error: bancoError } = await supabase
+      .from('bancos')
+      .select('id')
+      .eq('id', merged.banco_id)
+      .eq('user_id', user.id)
+      .single()
+
+    if (bancoError || !banco) {
       return NextResponse.json(
-        { message: 'Datos inválidos', errors: validation.errors },
+        { message: 'Datos inválidos', errors: { banco_id: 'Banco inválido' } },
         { status: 400 }
       )
     }
+    dataToUpdate.banco_id = banco.id
   }
 
-  // Cualquier PATCH implica que el usuario revisó la fila -- así se
-  // "confirma" una fila generada por una recurrencia sin necesitar un
-  // endpoint aparte (ver web/lib/recurrencias).
+  // Un cambio de tipo ingreso<->gasto invalida los campos exclusivos del
+  // otro tipo -- se limpian aquí para no dejar basura de la modalidad
+  // anterior (el CHECK de la migración los rechazaría de todos modos).
+  if (!esGasto) {
+    dataToUpdate.tipo_pago = null
+    dataToUpdate.banco_id = null
+    dataToUpdate.tienda = null
+  }
+  if (body.frecuencia === 'semanal') {
+    dataToUpdate.dias_mes = null
+  } else if (body.frecuencia) {
+    dataToUpdate.dia_semana = null
+  }
+
   const { data, error } = await supabase
-    .from('ingresos')
-    .update({ ...body, monto_confirmado: true })
+    .from('recurrencias')
+    .update(dataToUpdate)
     .eq('id', id)
     .eq('user_id', user.id)
     .select()
@@ -99,7 +137,7 @@ export async function PATCH(request, { params }) {
 
   if (error) {
     return NextResponse.json(
-      { message: 'Error al actualizar ingreso' },
+      { message: 'Error al actualizar recurrencia' },
       { status: 500 }
     )
   }
@@ -123,7 +161,7 @@ export async function DELETE(request, { params }) {
   const { id } = await params
 
   const { data: existing, error: fetchError } = await supabase
-    .from('ingresos')
+    .from('recurrencias')
     .select('id')
     .eq('id', id)
     .eq('user_id', user.id)
@@ -131,21 +169,21 @@ export async function DELETE(request, { params }) {
 
   if (fetchError || !existing) {
     return NextResponse.json(
-      { message: 'Ingreso no encontrado' },
+      { message: 'Recurrencia no encontrada' },
       { status: 404 }
     )
   }
 
   const { error } = await supabase
-    .from('ingresos')
+    .from('recurrencias')
     .delete()
     .eq('id', id)
     .eq('user_id', user.id)
 
   if (error) {
-    console.error('[ingresos] error al eliminar:', error)
+    console.error('[recurrencias] error al eliminar:', error)
     return NextResponse.json(
-      { message: error.message || 'Error al eliminar ingreso' },
+      { message: error.message || 'Error al eliminar recurrencia' },
       { status: 500 }
     )
   }

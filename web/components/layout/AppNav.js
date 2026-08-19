@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Wallet, TrendingUp, Landmark, BarChart3, Bot } from "lucide-react"
+import { LayoutDashboard, Wallet, TrendingUp, Landmark, BarChart3, Bot, Repeat } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 // Los componentes de ícono (funciones) no son serializables entre el
@@ -12,6 +12,7 @@ const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/gastos", label: "Gastos", icon: Wallet },
   { href: "/ingresos", label: "Ingresos", icon: TrendingUp },
+  { href: "/recurrencias", label: "Recurrencias", icon: Repeat },
   { href: "/cartera", label: "Cartera", icon: Landmark },
   { href: "/reportes", label: "Reportes", icon: BarChart3 },
   { href: "/agente", label: "Agente", icon: Bot },
