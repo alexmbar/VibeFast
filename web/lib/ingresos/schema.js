@@ -1,5 +1,7 @@
 // Enums y validaciones para ingresos
 
+import { MONTO_MAXIMO_CENTAVOS } from '@/lib/gastos/schema'
+
 export const CATEGORIAS = [
   'nomina',
   'bono',
@@ -27,6 +29,8 @@ export function validateIngreso(data) {
 
   if (!data.monto || data.monto <= 0) {
     errors.monto = 'Monto debe ser mayor a 0'
+  } else if (data.monto > MONTO_MAXIMO_CENTAVOS) {
+    errors.monto = 'Monto demasiado grande'
   }
 
   if (!data.fecha) {

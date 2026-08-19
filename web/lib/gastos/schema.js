@@ -67,12 +67,18 @@ export const TIPO_PAGO_LABELS = {
   otro: 'Otro',
 }
 
+// monto es INTEGER en la base de datos (centavos): tope real de
+// Postgres int4, no un límite de negocio.
+export const MONTO_MAXIMO_CENTAVOS = 2147483647
+
 // Validaciones básicas
 export function validateGasto(data) {
   const errors = {}
 
   if (!data.monto || data.monto <= 0) {
     errors.monto = 'Monto debe ser mayor a 0'
+  } else if (data.monto > MONTO_MAXIMO_CENTAVOS) {
+    errors.monto = 'Monto demasiado grande'
   }
 
   if (!data.fecha) {
