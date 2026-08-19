@@ -122,6 +122,13 @@ el gasto del mes.
   (▲/▼) de la columna y dirección activas. Cualquier tabla nueva que se
   agregue a la app debe implementar este mismo patrón.
 - Montos: formato `es-MX`, alineados a la derecha, con `tabular-nums`.
+- Todo campo de captura de un monto (`Gasto`, `Retiro`, `Ingreso`, y
+  cualquier entidad nueva que capture dinero) usa `MoneyInput`
+  (`web/components/ui/money-input.jsx`) en vez de `<Input type="number">`:
+  agrega comas de miles mientras se escribe y acepta decimales, pero el
+  valor que le llega al formulario sigue sin comas (compatible con
+  `pesosTocentavos`). No repitas un `<Input type="number">` a mano para
+  montos nuevos.
 - El formulario de crear/editar es **secundario**: el flujo principal es la
   captura por WhatsApp. Existe para corregir, así que prioriza que editar
   desde la lista sea cómodo por encima de que crear sea bonito.

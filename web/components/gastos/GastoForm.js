@@ -18,6 +18,7 @@ import {
 } from '@/lib/gastos/schema'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { MoneyInput } from '@/components/ui/money-input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -159,15 +160,12 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
           <Label htmlFor="monto">Monto</Label>
           <div className="relative">
             <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-            <Input
+            <MoneyInput
               id="monto"
-              type="number"
               name="monto"
               value={formData.monto}
               onChange={handleChange}
               placeholder="0.00"
-              step="0.01"
-              min="0"
               required
               aria-invalid={!!errors.monto}
               className="pl-6"
