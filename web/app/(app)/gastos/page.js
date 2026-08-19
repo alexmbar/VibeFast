@@ -2,8 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { Plus, Download } from 'lucide-react'
 import { listarGastos } from '@/lib/gastos/client'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 import GastoTable from '@/components/gastos/GastoTable'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -56,15 +62,35 @@ export default function GastosPage() {
 
   const hayFiltros = filters.desde || filters.hasta || filters.categoria || filters.tipo_pago
 
+  function exportUrl(format) {
+    const params = new URLSearchParams(
+      Object.fromEntries(Object.entries(filters).filter(([, v]) => v))
+    )
+    params.set('format', format)
+    return `/api/gastos/export?${params.toString()}`
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold tracking-tight">Mis gastos</h1>
-        <Button render={<Link href="/gastos/create" />}>
-          <Plus />
-          Nuevo gasto
-        </Button>
+        <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button variant="outline" />}>
+              <Download />
+              Exportar
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem render={<a href={exportUrl('csv')} />}>CSV</DropdownMenuItem>
+              <DropdownMenuItem render={<a href={exportUrl('json')} />}>JSON</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button render={<Link href="/gastos/create" />}>
+            <Plus />
+            Nuevo gasto
+          </Button>
+        </div>
       </div>
 
       {/* Filtros */}
