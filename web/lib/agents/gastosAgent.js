@@ -11,6 +11,7 @@
 
 import { getGastosTools, executeGastosTool } from "@/lib/tools/gastosRegistry.js"
 import { runAgent } from "./graph.js"
+import { logToolCall } from "@/lib/audit.js"
 
 // TODO CLAUDE.md: cuando exista zona horaria configurable por usuario,
 // leerla de ahí en vez de asumir America/Mexico_City.
@@ -40,5 +41,6 @@ export function runGastosAgent({ messages, conversationId }) {
     systemPrompt: buildSystemPrompt(),
     tools: getGastosTools(),
     executeTool: executeGastosTool,
+    onToolCall: logToolCall,
   })
 }
