@@ -68,7 +68,11 @@ export default function ProfilePage() {
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
       console.error('Error saving profile:', err)
-      setError(err.message || 'Error al guardar')
+      setError(
+        err.code === '23505'
+          ? 'Ese número ya está registrado en otra cuenta.'
+          : err.message || 'Error al guardar'
+      )
     } finally {
       setSaving(false)
     }
