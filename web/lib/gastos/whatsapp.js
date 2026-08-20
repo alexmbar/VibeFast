@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
 import { CATEGORIAS, TIPOS_PAGO } from './schema'
 import { descargarMediaKapso } from '@/lib/whatsapp/kapso'
+import { subirTicketADrive } from '@/lib/google-drive/client'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -21,10 +22,14 @@ export async function crearGastoDesdeWhatsApp(
 ) {
   try {
     let gasto = null
+    let mediaBuffer = null
 
-    // Si hay media (foto/PDF), usar OpenAI Vision
+    // Si hay media (foto/PDF), descargarla una sola vez: la misma
+    // descarga se usa para OpenAI Vision y, mas abajo, para la subida
+    // a Google Drive.
     if (mediaUrl) {
-      gasto = await parsearMediaConOpenAI(mediaUrl, mediaContentType)
+      mediaBuffer = await descargarMediaKapso(mediaUrl)
+      gasto = await parsearMediaConOpenAI(mediaBuffer, mediaContentType)
     } else if (opciones.origenAudio && texto) {
       gasto = await parsearTextoConOpenAI(texto)
     }
@@ -95,6 +100,26 @@ export async function crearGastoDesdeWhatsApp(
       }
     }
 
+    // Subida a Drive best-effort: si el usuario no tiene Drive
+    // conectado o la subida falla, el gasto ya quedo guardado igual.
+    if (mediaBuffer) {
+      const extension = mediaContentType?.includes('pdf') ? 'pdf' : 'jpg'
+      const subida = await subirTicketADrive(supabase, userId, {
+        buffer: mediaBuffer,
+        filename: `${data.fecha}-${data.tienda || data.categoria}.${extension}`,
+        mimeType: mediaContentType?.includes('pdf') ? 'application/pdf' : 'image/jpeg',
+      })
+
+      if (subida) {
+        await supabase
+          .from('gastos')
+          .update({ drive_file_id: subida.driveFileId, drive_file_url: subida.driveFileUrl })
+          .eq('id', data.id)
+        data.drive_file_id = subida.driveFileId
+        data.drive_file_url = subida.driveFileUrl
+      }
+    }
+
     return {
       success: true,
       gasto: data,
@@ -108,11 +133,11 @@ export async function crearGastoDesdeWhatsApp(
   }
 }
 
-// Parsear imagen/PDF con OpenAI Vision
-async function parsearMediaConOpenAI(mediaUrl, mediaContentType) {
+// Parsear imagen/PDF con OpenAI Vision. `buffer` ya viene descargado
+// (ver crearGastoDesdeWhatsApp, se descarga una sola vez y se reusa
+// para la subida a Drive).
+async function parsearMediaConOpenAI(buffer, mediaContentType) {
   try {
-    // Descargar la imagen (requiere la API key de Kapso)
-    const buffer = await descargarMediaKapso(mediaUrl)
     const base64 = Buffer.from(buffer).toString('base64')
 
     // Determinar media type

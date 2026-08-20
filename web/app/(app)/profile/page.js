@@ -19,9 +19,18 @@ export default function ProfilePage() {
   const [mostrarPensamientoAgente, setMostrarPensamientoAgente] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
+  const [driveConexion, setDriveConexion] = useState(null)
+  const [driveEstado, setDriveEstado] = useState(null)
+  const [desconectandoDrive, setDesconectandoDrive] = useState(false)
 
   useEffect(() => {
     loadProfile()
+
+    const drive = new URLSearchParams(window.location.search).get('drive')
+    if (drive === 'connected' || drive === 'error') {
+      setDriveEstado(drive)
+      window.history.replaceState(null, '', '/profile')
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -40,11 +49,30 @@ export default function ProfilePage() {
       setProfile(data)
       setPhone(data.phone || '')
       setMostrarPensamientoAgente(!!data.mostrar_pensamiento_agente)
+
+      const { data: drive } = await supabase
+        .from('google_drive_conexiones')
+        .select('google_email')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      setDriveConexion(drive)
     } catch (err) {
       console.error('Error loading profile:', err)
       setError(err.message ? `Error al cargar perfil: ${err.message}` : 'Error al cargar perfil')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleDesconectarDrive() {
+    setDesconectandoDrive(true)
+    try {
+      await fetch('/api/google-drive/desconectar', { method: 'POST' })
+      setDriveConexion(null)
+    } catch (err) {
+      console.error('Error desconectando Google Drive:', err)
+    } finally {
+      setDesconectandoDrive(false)
     }
   }
 
@@ -145,6 +173,58 @@ export default function ProfilePage() {
               <Button onClick={handleSave} disabled={saving} className="w-full">
                 {saving && <Loader2 className="animate-spin" />}
                 Guardar
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Google Drive</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {driveEstado === 'connected' && (
+            <Alert>
+              <AlertDescription>Google Drive conectado correctamente</AlertDescription>
+            </Alert>
+          )}
+          {driveEstado === 'error' && (
+            <Alert variant="destructive">
+              <AlertDescription>No se pudo conectar Google Drive. Intenta de nuevo.</AlertDescription>
+            </Alert>
+          )}
+
+          {driveConexion ? (
+            <>
+              <p className="text-sm">
+                Conectado como <span className="font-medium">{driveConexion.google_email}</span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Tus tickets y estados de cuenta capturados por WhatsApp se suben automáticamente a
+                la carpeta &quot;Controla Gasto - Tickets&quot; en tu Drive.
+              </p>
+              <Button
+                variant="outline"
+                onClick={handleDesconectarDrive}
+                disabled={desconectandoDrive}
+                className="w-full"
+              >
+                {desconectandoDrive && <Loader2 className="animate-spin" />}
+                Desconectar
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Sube automáticamente tus tickets y estados de cuenta a tu Google Drive personal
+                cuando los capturas por WhatsApp.
+              </p>
+              <Button
+                onClick={() => { window.location.href = '/api/google-drive/conectar' }}
+                className="w-full"
+              >
+                Conectar Google Drive
               </Button>
             </>
           )}
