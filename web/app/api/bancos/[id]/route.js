@@ -75,6 +75,11 @@ export async function PATCH(request, { params }) {
   const validation = validateBanco({
     nombre: body.nombre !== undefined ? body.nombre : existing.nombre,
     tipo: body.tipo !== undefined ? body.tipo : existing.tipo,
+    dia_corte: body.dia_corte !== undefined ? body.dia_corte : existing.dia_corte,
+    dia_limite_pago: body.dia_limite_pago !== undefined ? body.dia_limite_pago : existing.dia_limite_pago,
+    limite_credito: body.limite_credito !== undefined ? body.limite_credito : existing.limite_credito,
+    alias: body.alias !== undefined ? body.alias : existing.alias,
+    tasa_interes: body.tasa_interes !== undefined ? body.tasa_interes : existing.tasa_interes,
   })
   if (!validation.valid) {
     return NextResponse.json(
@@ -103,6 +108,11 @@ export async function PATCH(request, { params }) {
   const dataToUpdate = {}
   if (body.nombre !== undefined) dataToUpdate.nombre = body.nombre.trim()
   if (body.tipo !== undefined) dataToUpdate.tipo = body.tipo
+  if (body.dia_corte !== undefined) dataToUpdate.dia_corte = body.dia_corte
+  if (body.dia_limite_pago !== undefined) dataToUpdate.dia_limite_pago = body.dia_limite_pago
+  if (body.limite_credito !== undefined) dataToUpdate.limite_credito = body.limite_credito
+  if (body.alias !== undefined) dataToUpdate.alias = body.alias ? body.alias.trim() : null
+  if (body.tasa_interes !== undefined) dataToUpdate.tasa_interes = body.tasa_interes
 
   const { data, error } = await supabase
     .from('bancos')

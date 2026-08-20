@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Pencil, Loader2 } from 'lucide-react'
 import { actualizarBanco } from '@/lib/bancos/client'
 import { TIPO_BANCO_LABELS } from '@/lib/bancos/schema'
+import { formatMonto } from '@/lib/gastos/schema'
 import { useSortableTable } from '@/lib/hooks/useSortableTable'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -20,6 +21,8 @@ import {
 const COLUMNAS = [
   { key: 'nombre', label: 'Nombre' },
   { key: 'tipo', label: 'Tipo' },
+  { key: 'alias', label: 'Alias' },
+  { key: 'limite_credito', label: 'Límite de crédito', className: 'text-right' },
   { key: 'activo', label: 'Activo' },
 ]
 
@@ -29,6 +32,10 @@ function compararBancos(a, b, columna) {
       return TIPO_BANCO_LABELS[a.tipo].localeCompare(TIPO_BANCO_LABELS[b.tipo])
     case 'activo':
       return Number(a.activo) - Number(b.activo)
+    case 'limite_credito':
+      return (a.limite_credito || 0) - (b.limite_credito || 0)
+    case 'alias':
+      return (a.alias || '').localeCompare(b.alias || '')
     default:
       return (a[columna] || '').localeCompare(b[columna] || '')
   }
@@ -96,6 +103,10 @@ export default function BancoTable({ bancos, onToggleActivo, isLoading }) {
           <TableRow key={banco.id}>
             <TableCell className="text-sm">{banco.nombre}</TableCell>
             <TableCell className="text-sm">{TIPO_BANCO_LABELS[banco.tipo]}</TableCell>
+            <TableCell className="text-sm">{banco.alias || '—'}</TableCell>
+            <TableCell className="text-right text-sm font-mono tabular-nums">
+              {banco.limite_credito ? formatMonto(banco.limite_credito) : '—'}
+            </TableCell>
             <TableCell>
               <div className="flex items-center gap-2">
                 {toggling === banco.id ? (

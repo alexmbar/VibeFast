@@ -81,6 +81,11 @@ export async function POST(request) {
       user_id: user.id,
       nombre: body.nombre.trim(),
       tipo: body.tipo,
+      dia_corte: body.dia_corte ?? null,
+      dia_limite_pago: body.dia_limite_pago ?? null,
+      limite_credito: body.limite_credito ?? null,
+      alias: body.alias ? body.alias.trim() : null,
+      tasa_interes: body.tasa_interes ?? null,
     })
     .select()
     .single()

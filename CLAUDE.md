@@ -258,9 +258,21 @@ por Kapso) sí lo permite sin ese trámite.
 - ~~Catálogo de bancos por usuario~~ — resuelto para la parte de débito/
   Cartera: `banco` pasó a catálogo (`013_bancos.sql`, `014_migrar_banco_a_
   catalogo.sql`) con `tipo` débito/crédito. Cartera quedó como saldo
-  calculado (función `cartera_saldo()`), no como tabla propia. Pendiente:
-  - Crédito: agregar fecha de corte (y probablemente fecha límite de pago)
-    por banco, para reportes por periodo de corte en vez de mes calendario.
+  calculado (función `cartera_saldo()`), no como tabla propia. Pendiente,
+  todo para bancos `tipo = credito`:
+  - Fecha de corte y fecha límite de pago, para reportes por periodo de
+    corte en vez de mes calendario y para recordatorio de pago por
+    WhatsApp.
+  - Límite de crédito, para mostrar % de utilización ("$8,000 de $20,000
+    usados"). La deuda/saldo usado se deriva sumando `gastos` desde el
+    último corte (como `cartera_saldo()`), no necesita campo propio.
+  - Últimos 4 dígitos o alias, para distinguir dos tarjetas del mismo
+    banco (ej. Nu clásica vs. Nu Ultravioleta) — "Nu" solo no alcanza.
+  - Tasa de interés / CAT (menor prioridad, "nice to have"), para
+    estimar el costo de no pagar de contado.
+  - Pago mínimo NO va aquí: varía cada mes y viene en el estado de
+    cuenta, no es un dato fijo del banco. Encaja mejor con la carga de
+    estados de cuenta (ver ítem de RAG/chatbot arriba).
 
 - CONFIGURACIONES: agregar un apartado para configurar zona horaria, tipo de
   moneda y formato de fecha (por usuario, no global). Ojo: `fecha` es `date`
@@ -286,4 +298,16 @@ por Kapso) sí lo permite sin ese trámite.
   calcula real (con periodicidad, capitalización) o es solo informativo/
   proyectado, y cómo se relaciona con Cartera (ver ítem de retiros en
   efectivo) si es que comparten saldo.
+
+- Presupuestos: límite mensual por categoría (y quizá global), con
+  comparación gasto real vs. presupuestado y aviso al acercarse o pasarse
+  del límite (¿por WhatsApp, como los recordatorios de pago de crédito
+  pendientes arriba?).
+
+- Presupuestos predictivos: en vez de que el usuario capture el límite a
+  mano, sugerirlo/ajustarlo con base en el historial de gastos por
+  categoría. Requiere suficiente historial para que la predicción sea
+  confiable, así que no lo empieces hasta que la cuenta lleve al menos 6
+  meses de datos capturados (revisa la fecha del primer gasto/ingreso del
+  usuario antes de construir esto).
 
