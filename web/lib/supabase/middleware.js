@@ -65,6 +65,30 @@ export async function updateSession(request) {
     return NextResponse.redirect(url)
   }
 
+  // /admin es zona del dueño del SaaS, no de un usuario cualquiera.
+  // Sin sesión, a login. Con sesión pero sin role admin, a /gastos
+  // (nunca "no autorizado": eso confirmaría que la ruta existe).
+  if (pathname.startsWith("/admin")) {
+    if (!user) {
+      const url = request.nextUrl.clone()
+      url.pathname = config.auth.loginUrl
+      url.searchParams.set("next", pathname)
+      return NextResponse.redirect(url)
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single()
+
+    if (profile?.role !== "admin") {
+      const url = request.nextUrl.clone()
+      url.pathname = config.auth.afterLoginUrl
+      return NextResponse.redirect(url)
+    }
+  }
+
   // Si ya hay sesión y va a /login, mándalo al dashboard.
   if (user && pathname === config.auth.loginUrl) {
     const url = request.nextUrl.clone()

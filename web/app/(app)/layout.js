@@ -7,6 +7,7 @@ import AppNav from "@/components/layout/AppNav"
 import { AppThemeProvider } from "@/components/layout/AppTheme"
 import Logo from "@/components/Logo"
 import OnboardingWizard from "@/components/onboarding/OnboardingWizard"
+import CuentaSuspendida from "@/components/layout/CuentaSuspendida"
 
 // Layout de la zona privada. El middleware ya bloquea sin sesión,
 // pero revalidamos aquí para tener el `user` y proteger por si acaso.
@@ -23,7 +24,7 @@ export default async function AppLayout({ children }) {
   const supabase = await createClient()
   const { data: profile } = await supabase
     .from("profiles")
-    .select("phone, onboarding_step")
+    .select("phone, onboarding_step, estado_cuenta")
     .eq("id", user.id)
     .single()
 
@@ -40,7 +41,9 @@ export default async function AppLayout({ children }) {
           </div>
         </header>
 
-        {profile?.onboarding_step === "completado" ? (
+        {profile?.estado_cuenta === "suspendida" ? (
+          <CuentaSuspendida />
+        ) : profile?.onboarding_step === "completado" ? (
           <div className="mx-auto flex w-full max-w-6xl flex-1 gap-6 px-4 py-6">
             <aside className="hidden w-52 shrink-0 md:block">
               <AppNav />
