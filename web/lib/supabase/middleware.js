@@ -65,11 +65,16 @@ export async function updateSession(request) {
     return NextResponse.redirect(url)
   }
 
-  // /admin es zona del dueño del SaaS, no de un usuario cualquiera.
-  // Sin sesión, a login. Con sesión pero sin role admin, a /gastos
-  // (nunca "no autorizado": eso confirmaría que la ruta existe).
-  if (pathname.startsWith("/admin")) {
+  // /admin (páginas) y /api/admin (endpoints) son zona del dueño del
+  // SaaS, no de un usuario cualquiera. Sin sesión, a login (o 401 si es
+  // API: un redirect ahí rompe al caller, que espera JSON). Con sesión
+  // pero sin role admin, a /gastos / 403 (nunca "no autorizado" en la
+  // página: eso confirmaría que la ruta existe).
+  if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
+    const esApi = pathname.startsWith("/api/admin")
+
     if (!user) {
+      if (esApi) return NextResponse.json({ message: "No autenticado" }, { status: 401 })
       const url = request.nextUrl.clone()
       url.pathname = config.auth.loginUrl
       url.searchParams.set("next", pathname)
@@ -83,6 +88,7 @@ export async function updateSession(request) {
       .single()
 
     if (profile?.role !== "admin") {
+      if (esApi) return NextResponse.json({ message: "No autorizado" }, { status: 403 })
       const url = request.nextUrl.clone()
       url.pathname = config.auth.afterLoginUrl
       return NextResponse.redirect(url)

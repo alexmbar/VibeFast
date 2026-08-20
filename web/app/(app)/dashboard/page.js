@@ -28,6 +28,21 @@ function addDias(d, dias) {
   return copia
 }
 
+// Todas las fechas entre inicio y fin (inclusive), en ISO. La gráfica de
+// tendencia necesita un punto por día -- incluidos los días sin gasto ni
+// ingreso -- porque su eje X es categórico (una posición por fecha única).
+// Sin relleno, un ingreso aislado (ej. nómina quincenal) puede terminar
+// como la única fecha de su serie, sin otra con quién conectar la línea.
+function diasEnRango(inicio, fin) {
+  const dias = []
+  let cursor = new Date(inicio)
+  while (cursor <= fin) {
+    dias.push(toISODate(cursor))
+    cursor = addDias(cursor, 1)
+  }
+  return dias
+}
+
 const HOY = new Date()
 HOY.setHours(0, 0, 0, 0)
 const INICIO_MES = new Date(HOY.getFullYear(), HOY.getMonth(), 1)
@@ -116,21 +131,19 @@ export default function DashboardPage() {
     .sort((a, b) => b.total - a.total)
     .slice(0, 5)
 
+  const diasRangoTendencia = diasEnRango(addDias(HOY, -(rangoTendencia - 1)), HOY)
+
   const gastoDia = {}
   gastosSemana.forEach(g => {
     gastoDia[g.fecha] = (gastoDia[g.fecha] || 0) + g.monto
   })
-  const dataSemana = Object.entries(gastoDia)
-    .map(([fecha, total]) => ({ fecha, total }))
-    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+  const dataSemana = diasRangoTendencia.map(fecha => ({ fecha, total: gastoDia[fecha] || 0 }))
 
   const ingresoDia = {}
   ingresosSemana.forEach(i => {
     ingresoDia[i.fecha] = (ingresoDia[i.fecha] || 0) + i.monto
   })
-  const dataSemanaIngreso = Object.entries(ingresoDia)
-    .map(([fecha, total]) => ({ fecha, total }))
-    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+  const dataSemanaIngreso = diasRangoTendencia.map(fecha => ({ fecha, total: ingresoDia[fecha] || 0 }))
 
   // Proyección de días futuros a partir de recurrencias activas (nómina,
   // renta, suscripciones): el cron solo genera filas reales hasta hoy

@@ -68,7 +68,7 @@ export default function TendenciaChart({
     seriesField: 'serie',
     color: colores,
     legends: mostrarLeyenda ? { visible: true, orient: 'bottom' } : undefined,
-    point: { visible: false },
+    point: { visible: true, style: { size: 4 } },
     line: {
       style: {
         curveType: 'monotone',
