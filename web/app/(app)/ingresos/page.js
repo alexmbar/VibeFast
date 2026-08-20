@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ordenarPorLabel } from '@/lib/utils'
 
 export default function IngresosPage() {
   const [ingresos, setIngresos] = useState([])
@@ -105,7 +106,7 @@ export default function IngresosPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas</SelectItem>
-                  {CATEGORIAS.map(cat => (
+                  {ordenarPorLabel(CATEGORIAS, CATEGORIA_LABELS).map(cat => (
                     <SelectItem key={cat} value={cat}>{CATEGORIA_LABELS[cat]}</SelectItem>
                   ))}
                 </SelectContent>

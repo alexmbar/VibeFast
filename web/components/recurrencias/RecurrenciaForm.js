@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ordenarPorLabel } from '@/lib/utils'
 
 const TIPOS_PAGO_BANCO = ['debito', 'credito']
 const SIN_BANCO = '__sin_banco__'
@@ -184,7 +185,7 @@ export default function RecurrenciaForm({ initialData = null, onSuccess, onCance
               <SelectValue placeholder="Selecciona un tipo" />
             </SelectTrigger>
             <SelectContent>
-              {TIPOS.map(tipo => (
+              {ordenarPorLabel(TIPOS, TIPO_LABELS).map(tipo => (
                 <SelectItem key={tipo} value={tipo}>{TIPO_LABELS[tipo]}</SelectItem>
               ))}
             </SelectContent>
@@ -225,7 +226,7 @@ export default function RecurrenciaForm({ initialData = null, onSuccess, onCance
               <SelectValue placeholder="Selecciona una categoría" />
             </SelectTrigger>
             <SelectContent>
-              {categoriasDe(formData.tipo).map(cat => (
+              {ordenarPorLabel(categoriasDe(formData.tipo), categoriaLabelsDe(formData.tipo)).map(cat => (
                 <SelectItem key={cat} value={cat}>
                   {categoriaLabelsDe(formData.tipo)[cat]}
                 </SelectItem>
@@ -248,7 +249,7 @@ export default function RecurrenciaForm({ initialData = null, onSuccess, onCance
                   <SelectValue placeholder="Selecciona tipo de pago" />
                 </SelectTrigger>
                 <SelectContent>
-                  {TIPOS_PAGO.map(tipo => (
+                  {ordenarPorLabel(TIPOS_PAGO, TIPO_PAGO_LABELS).map(tipo => (
                     <SelectItem key={tipo} value={tipo}>{TIPO_PAGO_LABELS[tipo]}</SelectItem>
                   ))}
                 </SelectContent>
@@ -280,7 +281,7 @@ export default function RecurrenciaForm({ initialData = null, onSuccess, onCance
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={SIN_BANCO}>Ninguno</SelectItem>
-                  {bancos.map(banco => (
+                  {[...bancos].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(banco => (
                     <SelectItem key={banco.id} value={String(banco.id)}>{banco.nombre}</SelectItem>
                   ))}
                 </SelectContent>

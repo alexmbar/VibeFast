@@ -6,10 +6,12 @@ import { Plus } from 'lucide-react'
 import { listarRecurrencias } from '@/lib/recurrencias/client'
 import { TIPOS, TIPO_LABELS } from '@/lib/recurrencias/schema'
 import RecurrenciaTable from '@/components/recurrencias/RecurrenciaTable'
+import AlertasRecurrencias from '@/components/recurrencias/AlertasRecurrencias'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ordenarPorLabel } from '@/lib/utils'
 
 export default function RecurrenciasPage() {
   const [recurrencias, setRecurrencias] = useState([])
@@ -59,6 +61,8 @@ export default function RecurrenciasPage() {
         </Button>
       </div>
 
+      <AlertasRecurrencias />
+
       <Card>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -73,7 +77,7 @@ export default function RecurrenciasPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
-                  {TIPOS.map(tipo => (
+                  {ordenarPorLabel(TIPOS, TIPO_LABELS).map(tipo => (
                     <SelectItem key={tipo} value={tipo}>{TIPO_LABELS[tipo]}</SelectItem>
                   ))}
                 </SelectContent>

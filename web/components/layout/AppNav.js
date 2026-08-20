@@ -1,9 +1,11 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { LayoutDashboard, Wallet, TrendingUp, Landmark, BarChart3, Bot, Repeat } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { obtenerAlertasRecurrencias } from "@/lib/recurrencias/alertas"
 
 // Los componentes de ícono (funciones) no son serializables entre el
 // server component padre (app)/layout.js y este client component, así
@@ -23,6 +25,19 @@ const NAV = [
 // -- y con él, el guard de auth -- en cliente.
 export default function AppNav() {
   const pathname = usePathname()
+  const [alertasCount, setAlertasCount] = useState(0)
+
+  useEffect(() => {
+    let vigente = true
+    obtenerAlertasRecurrencias()
+      .then((data) => {
+        if (vigente) setAlertasCount(data.total)
+      })
+      .catch((error) => console.error("Error loading alertas recurrencias:", error))
+    return () => {
+      vigente = false
+    }
+  }, [])
 
   return (
     <nav className="flex flex-col gap-1 rounded-xl bg-card p-2 ring-1 ring-foreground/10">
@@ -41,6 +56,11 @@ export default function AppNav() {
           >
             <Icon className="size-4" />
             {label}
+            {href === "/recurrencias" && alertasCount > 0 && (
+              <span className="ml-auto flex size-5 items-center justify-center rounded-full bg-amber-500 text-xs font-semibold text-white">
+                {alertasCount}
+              </span>
+            )}
           </Link>
         )
       })}

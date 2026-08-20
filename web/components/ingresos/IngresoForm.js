@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ordenarPorLabel } from '@/lib/utils'
 
 export default function IngresoForm({ initialData = null, onSuccess, onCancel }) {
   const [loading, setLoading] = useState(false)
@@ -125,7 +126,7 @@ export default function IngresoForm({ initialData = null, onSuccess, onCancel })
               <SelectValue placeholder="Selecciona una categoría" />
             </SelectTrigger>
             <SelectContent>
-              {CATEGORIAS.map(cat => (
+              {ordenarPorLabel(CATEGORIAS, CATEGORIA_LABELS).map(cat => (
                 <SelectItem key={cat} value={cat}>
                   {CATEGORIA_LABELS[cat]}
                 </SelectItem>

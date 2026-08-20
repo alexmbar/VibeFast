@@ -144,6 +144,10 @@ el gasto del mes.
   (▲/▼) de la columna y dirección activas. Cualquier tabla nueva que se
   agregue a la app debe implementar este mismo patrón.
 - Montos: formato `es-MX`, alineados a la derecha, con `tabular-nums`.
+- Las listas de selección (`<select>`, dropdowns, menús de opciones) se
+  ordenan alfabéticamente de A a Z por la etiqueta visible (con acentos,
+  no por el valor interno del enum). Aplica a categoría, tipo de pago,
+  bancos y cualquier lista nueva de este tipo.
 - Todo campo de captura de un monto (`Gasto`, `Retiro`, `Ingreso`, y
   cualquier entidad nueva que capture dinero) usa `MoneyInput`
   (`web/components/ui/money-input.jsx`) en vez de `<Input type="number">`:
@@ -251,6 +255,23 @@ por Kapso) sí lo permite sin ese trámite.
 ## TODO
 - Incluir carga y lectura de estados de cuenta "https://vibe-fast-web-omega.vercel.app/docs/recetas/chatbot-con-rag"
 
+- Alertar cuando el cron de recurrencias falla o se salta una regla:
+  `generar-recurrencias/route.js` ya acumula un arreglo `errores` (por
+  regla que truena al insertar) y lo regresa en el JSON de respuesta, pero
+  nadie lo lee — un cron de Vercel que responde 200 no dispara ninguna
+  alerta aunque `errores` no esté vacío. Falta decidir el canal (¿WhatsApp
+  al usuario afectado, como ya hace `notificarUsuarios()` para las
+  generaciones exitosas? ¿un aviso interno tipo email/Slack al admin?) y
+  confirmar primero si `notificarUsuarios()` mismo está tragando fallos:
+  ya envía las confirmaciones como texto libre envuelto en try/catch
+  "best-effort", que probablemente falla en silencio si el usuario lleva
+  más de 24h sin escribirle al bot (mismo límite de ventana de 24h que
+  bloquea el recordatorio de pago de crédito, ver abajo). Las alertas
+  *dentro de la app* (pendientes de confirmar / próximas a generarse) ya
+  están resueltas — ver `web/lib/recurrencias/alertas.js` y
+  `AlertasRecurrencias` (dashboard, `/recurrencias`, badge en el nav);
+  esto es solo para cuando el cron mismo no corre bien.
+
 - ~~Retiros en efectivo~~ — resuelto: tabla `retiros` separada de `gastos`
   (migración `015_retiros.sql`), alimenta Cartera. Ver "Retiros de efectivo y
   Cartera" arriba.
@@ -258,21 +279,54 @@ por Kapso) sí lo permite sin ese trámite.
 - ~~Catálogo de bancos por usuario~~ — resuelto para la parte de débito/
   Cartera: `banco` pasó a catálogo (`013_bancos.sql`, `014_migrar_banco_a_
   catalogo.sql`) con `tipo` débito/crédito. Cartera quedó como saldo
-  calculado (función `cartera_saldo()`), no como tabla propia. Pendiente,
-  todo para bancos `tipo = credito`:
-  - Fecha de corte y fecha límite de pago, para reportes por periodo de
-    corte en vez de mes calendario y para recordatorio de pago por
-    WhatsApp.
-  - Límite de crédito, para mostrar % de utilización ("$8,000 de $20,000
-    usados"). La deuda/saldo usado se deriva sumando `gastos` desde el
-    último corte (como `cartera_saldo()`), no necesita campo propio.
-  - Últimos 4 dígitos o alias, para distinguir dos tarjetas del mismo
-    banco (ej. Nu clásica vs. Nu Ultravioleta) — "Nu" solo no alcanza.
-  - Tasa de interés / CAT (menor prioridad, "nice to have"), para
-    estimar el costo de no pagar de contado.
-  - Pago mínimo NO va aquí: varía cada mes y viene en el estado de
-    cuenta, no es un dato fijo del banco. Encaja mejor con la carga de
-    estados de cuenta (ver ítem de RAG/chatbot arriba).
+  calculado (función `cartera_saldo()`), no como tabla propia.
+
+- ~~Datos de crédito en `bancos`~~ — resuelto: `dia_corte`,
+  `dia_limite_pago`, `limite_credito` (centavos), `alias` (últimos 4
+  dígitos o apodo, ej. Nu clásica vs. Nu Ultravioleta) y `tasa_interes`
+  (% anual/CAT), todos nullable y solo válidos con `tipo = 'credito'`
+  (`022_bancos_datos_credito.sql`, formulario en `BancoForm.js`). Pago
+  mínimo se descartó a propósito: varía cada estado de cuenta, no es un
+  dato fijo del banco — encaja mejor con la carga de estados de cuenta
+  (ítem de RAG/chatbot arriba). Esto destapa dos features aparte,
+  pendientes:
+  - **Reportes por periodo de corte**: agrupar `/reportes` por
+    `[corte_anterior, corte_actual)` usando `dia_corte` en vez de mes
+    calendario. Los reportes actuales agrupan en JS client-side sobre
+    hasta 1000 filas (`reportes/page.js`) — el patrón correcto del
+    proyecto para un total confiable es una función SQL tipo
+    `balance_neto(p_desde, p_hasta)` (`020_balance_neto_function.sql`),
+    no extender ese agrupamiento JS.
+  - **Recordatorio de pago por WhatsApp** (N días antes de
+    `dia_limite_pago`, cron nuevo tipo `generar-recurrencias`): **no se
+    puede mandar como mensaje de texto libre.** WhatsApp Business
+    Platform solo permite `type: "text"` dentro de la ventana de 24h
+    desde el último mensaje del usuario; un recordatorio proactivo casi
+    siempre cae fuera de esa ventana. Hace falta un **template**
+    pre-aprobado por Meta (`type: "template"`, mismo endpoint
+    `POST /meta/whatsapp/v24.0/{phone_number_id}/messages` que ya usa
+    `enviarMensajeWhatsApp()`, ver
+    [docs de Kapso](https://docs.kapso.ai/api/meta/whatsapp/messages/send-a-message)):
+    1. ~~Dar de alta el template en Kapso/Meta~~ — hecho: template
+       `recordatorio_pago_credito` (categoría `UTILITY`, `es_MX`,
+       `parameter_format: "NAMED"`, params `nombre_banco`, `fecha_limite`,
+       `dias_restantes`) creado y enviado a revisión de Meta el
+       2026-08-19, estado `Submitted` en el dashboard de Kapso.
+    2. Esperar aprobación de Meta (no es instantáneo, contarlo en el
+       tiempo de implementación). **Revisar estado en Kapso ~2026-08-22**
+       (3 días después del submit) y avisar si ya quedó `Approved` o si
+       Meta la rechazó.
+    3. Agregar `enviarPlantillaWhatsApp(to, templateName, params)` en
+       `kapso.js` (manda `type: "template"` en vez de `type: "text"`) y
+       usarla en el cron nuevo en vez de `enviarMensajeWhatsApp()`. Bloqueado
+       hasta que el paso 2 quede en `Approved`.
+    - Mismo problema ya existe hoy en `notificarUsuarios()` del cron de
+      recurrencias (`generar-recurrencias/route.js`) — manda
+      confirmaciones proactivas como texto libre, envueltas en
+      try/catch "best-effort" que probablemente ya traga fallos
+      silenciosos cuando el usuario lleva más de 24h sin escribirle al
+      bot. Vale la pena confirmarlo antes de construir el recordatorio
+      de crédito.
 
 - CONFIGURACIONES: agregar un apartado para configurar zona horaria, tipo de
   moneda y formato de fecha (por usuario, no global). Ojo: `fecha` es `date`

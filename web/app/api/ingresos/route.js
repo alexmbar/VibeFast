@@ -19,6 +19,7 @@ export async function GET(request) {
   const desde = searchParams.get('desde')
   const hasta = searchParams.get('hasta')
   const categoria = searchParams.get('categoria')
+  const pendiente = searchParams.get('pendiente')
   const limit = parseInt(searchParams.get('limit') || '50')
   const offset = parseInt(searchParams.get('offset') || '0')
 
@@ -37,6 +38,9 @@ export async function GET(request) {
   }
   if (categoria && CATEGORIAS.includes(categoria)) {
     query = query.eq('categoria', categoria)
+  }
+  if (pendiente === 'true') {
+    query = query.eq('monto_confirmado', false)
   }
 
   const { data, error, count } = await query

@@ -22,6 +22,7 @@ export async function listarGastos(filters = {}) {
   if (filters.hasta) params.append('hasta', filters.hasta)
   if (filters.categoria) params.append('categoria', filters.categoria)
   if (filters.tipo_pago) params.append('tipo_pago', filters.tipo_pago)
+  if (filters.pendiente) params.append('pendiente', filters.pendiente)
   if (filters.limit) params.append('limit', filters.limit)
   if (filters.offset) params.append('offset', filters.offset)
 

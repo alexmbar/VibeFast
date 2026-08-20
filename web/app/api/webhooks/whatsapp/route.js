@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { crearGastoDesdeWhatsApp } from '@/lib/gastos/whatsapp'
 import { crearRetiroDesdeWhatsApp } from '@/lib/retiros/whatsapp'
 import { verificarFirmaKapso, enviarMensajeWhatsApp } from '@/lib/whatsapp/kapso'
+import { transcribirAudioWhatsApp } from '@/lib/whatsapp/audio'
 
 const formatoMoneda = new Intl.NumberFormat('es-MX', {
   style: 'currency',
@@ -30,7 +31,8 @@ export async function POST(request) {
     }
 
     const userPhone = `+${message.from}`
-    const body = message.text?.body || message.image?.caption || message.document?.caption || ''
+    const esAudio = !!message.audio
+    let body = message.text?.body || message.image?.caption || message.document?.caption || ''
     const mediaUrl = message.kapso?.media_data?.url
     const mediaContentType = message.kapso?.media_data?.content_type
 
@@ -53,15 +55,40 @@ export async function POST(request) {
       await confirmarPrimerMensaje(supabase, user, userPhone)
     }
 
+    // Una nota de voz no tiene "body" propio: se transcribe primero y el
+    // texto resultante sigue el mismo camino que un mensaje escrito (incluida
+    // la detección de "retiro").
+    let transcripcion = null
+    if (esAudio && mediaUrl) {
+      transcripcion = await transcribirAudioWhatsApp(mediaUrl, mediaContentType)
+
+      if (!transcripcion) {
+        await enviarMensajeWhatsApp(
+          userPhone,
+          'No pude entender el audio. Intenta de nuevo o escribe el gasto como texto.'
+        )
+        return NextResponse.json({ success: false })
+      }
+
+      body = transcripcion
+    }
+
     // Un mensaje que empieza con "retiro" se captura como retiro de
     // efectivo, no como gasto; el resto del flujo no cambia.
     const esRetiro = /^\s*retiro\b/i.test(body)
 
     const resultado = esRetiro
       ? await crearRetiroDesdeWhatsApp(supabase, user.id, body)
-      : await crearGastoDesdeWhatsApp(supabase, user.id, body, mediaUrl, mediaContentType)
+      : await crearGastoDesdeWhatsApp(
+          supabase,
+          user.id,
+          body,
+          esAudio ? null : mediaUrl,
+          mediaContentType,
+          { origenAudio: esAudio }
+        )
 
-    await responderWhatsApp(userPhone, esRetiro, resultado)
+    await responderWhatsApp(userPhone, esRetiro, resultado, transcripcion)
 
     if (!resultado.success) {
       return NextResponse.json({ success: false })
@@ -89,7 +116,7 @@ async function confirmarPrimerMensaje(supabase, user, userPhone) {
     const nombre = user.full_name ? `, ${user.full_name.split(' ')[0]}` : ''
     await enviarMensajeWhatsApp(
       userPhone,
-      `¡Hola${nombre}! Tu WhatsApp quedó vinculado. A partir de ahora puedes mandarme tus gastos así: "500 oxxo", una foto del ticket, o "retiro 2000 bbva" si sacaste efectivo.`
+      `¡Hola${nombre}! Tu WhatsApp quedó vinculado. A partir de ahora puedes mandarme tus gastos así: "500 oxxo", una nota de voz, una foto del ticket, o "retiro 2000 bbva" si sacaste efectivo.`
     )
     await supabase
       .from('profiles')
@@ -101,11 +128,16 @@ async function confirmarPrimerMensaje(supabase, user, userPhone) {
 }
 
 // Confirma o reporta el error de vuelta al usuario por WhatsApp. No
-// bloquea el procesamiento del webhook si el envío falla.
-async function responderWhatsApp(userPhone, esRetiro, resultado) {
+// bloquea el procesamiento del webhook si el envío falla. Si el mensaje
+// venía de una nota de voz, se incluye lo que se transcribió: la
+// transcripción tiene más margen de error que texto escrito, así que el
+// usuario necesita poder detectar de inmediato si se entendió mal.
+async function responderWhatsApp(userPhone, esRetiro, resultado, transcripcion) {
   try {
+    const sufijoTranscripcion = transcripcion ? `\n(escuché: "${transcripcion}")` : ''
+
     if (!resultado.success) {
-      await enviarMensajeWhatsApp(userPhone, resultado.error)
+      await enviarMensajeWhatsApp(userPhone, `${resultado.error}${sufijoTranscripcion}`)
       return
     }
 
@@ -113,14 +145,14 @@ async function responderWhatsApp(userPhone, esRetiro, resultado) {
       const { retiro, banco } = resultado
       await enviarMensajeWhatsApp(
         userPhone,
-        `Retiro registrado: ${formatoMoneda.format(retiro.monto / 100)} de ${banco.nombre}`
+        `Retiro registrado: ${formatoMoneda.format(retiro.monto / 100)} de ${banco.nombre}${sufijoTranscripcion}`
       )
     } else {
       const { gasto } = resultado
       const destino = gasto.tienda || gasto.categoria
       await enviarMensajeWhatsApp(
         userPhone,
-        `Gasto registrado: ${formatoMoneda.format(gasto.monto / 100)} en ${destino}`
+        `Gasto registrado: ${formatoMoneda.format(gasto.monto / 100)} en ${destino}${sufijoTranscripcion}`
       )
     }
   } catch (error) {

@@ -148,7 +148,7 @@ export default function RetiroForm({ initialData = null, onSuccess, onCancel }) 
               <SelectValue placeholder="Selecciona un banco" />
             </SelectTrigger>
             <SelectContent>
-              {bancos.map(banco => (
+              {[...bancos].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(banco => (
                 <SelectItem key={banco.id} value={String(banco.id)}>
                   {banco.nombre}
                 </SelectItem>

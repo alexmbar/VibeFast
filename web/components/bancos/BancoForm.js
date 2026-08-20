@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ordenarPorLabel } from '@/lib/utils'
 
 export default function BancoForm({ initialData = null, onSuccess, onCancel }) {
   const [loading, setLoading] = useState(false)
@@ -133,7 +134,7 @@ export default function BancoForm({ initialData = null, onSuccess, onCancel }) {
               <SelectValue placeholder="Selecciona un tipo" />
             </SelectTrigger>
             <SelectContent>
-              {TIPOS_BANCO.map(tipo => (
+              {ordenarPorLabel(TIPOS_BANCO, TIPO_BANCO_LABELS).map(tipo => (
                 <SelectItem key={tipo} value={tipo}>
                   {TIPO_BANCO_LABELS[tipo]}
                 </SelectItem>

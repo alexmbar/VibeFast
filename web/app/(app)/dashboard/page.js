@@ -1,15 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Plus, Wallet, TrendingUp, Scale, Loader2 } from 'lucide-react'
 import { listarGastos } from '@/lib/gastos/client'
 import { listarIngresos, obtenerBalanceNeto } from '@/lib/ingresos/client'
+import { listarRecurrencias } from '@/lib/recurrencias/client'
+import { ocurrenciasEnRango } from '@/lib/recurrencias/fechas'
 import { formatMonto } from '@/lib/gastos/schema'
 import CategoriaChart from '@/components/reportes/CategoriaChart'
 import TendenciaChart from '@/components/reportes/TendenciaChart'
 import GastoTable from '@/components/gastos/GastoTable'
 import IngresoTable from '@/components/ingresos/IngresoTable'
+import AlertasRecurrencias from '@/components/recurrencias/AlertasRecurrencias'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 
@@ -19,13 +22,26 @@ function toISODate(d) {
   return `${d.getFullYear()}-${month}-${day}`
 }
 
+function addDias(d, dias) {
+  const copia = new Date(d)
+  copia.setDate(copia.getDate() + dias)
+  return copia
+}
+
 const HOY = new Date()
 HOY.setHours(0, 0, 0, 0)
 const INICIO_MES = new Date(HOY.getFullYear(), HOY.getMonth(), 1)
-const INICIO_SEMANA = new Date(HOY)
-INICIO_SEMANA.setDate(HOY.getDate() - 6)
 
 const MES_LABEL = new Intl.DateTimeFormat('es-MX', { month: 'long', year: 'numeric' }).format(HOY)
+
+// Ventana de la gráfica "Tendencia Diaria": controlada por el usuario desde
+// un selector en el propio dashboard (no persistida en perfil). El mismo
+// número de días se usa hacia atrás (datos reales) y hacia adelante
+// (proyección de recurrencias activas).
+const OPCIONES_RANGO_TENDENCIA = [
+  { dias: 7, label: '7 días' },
+  { dias: 30, label: '30 días' },
+]
 
 export default function DashboardPage() {
   const [gastosMes, setGastosMes] = useState([])
@@ -36,18 +52,22 @@ export default function DashboardPage() {
   const [ingresosRecientes, setIngresosRecientes] = useState([])
   const [balanceNeto, setBalanceNeto] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [rangoTendencia, setRangoTendencia] = useState(7)
+  const [reglasActivas, setReglasActivas] = useState([])
 
-  async function loadDatos() {
+  async function loadDatos(rango) {
     setIsLoading(true)
     try {
-      const [mes, semana, ultimos, ingresosMesRes, ingresosSemanaRes, ingresosUltimos, balance] = await Promise.all([
+      const inicioRango = addDias(HOY, -(rango - 1))
+      const [mes, semana, ultimos, ingresosMesRes, ingresosSemanaRes, ingresosUltimos, balance, reglas] = await Promise.all([
         listarGastos({ desde: toISODate(INICIO_MES), hasta: toISODate(HOY), limit: 1000 }),
-        listarGastos({ desde: toISODate(INICIO_SEMANA), hasta: toISODate(HOY), limit: 1000 }),
+        listarGastos({ desde: toISODate(inicioRango), hasta: toISODate(HOY), limit: 1000 }),
         listarGastos({ limit: 8 }),
         listarIngresos({ desde: toISODate(INICIO_MES), hasta: toISODate(HOY), limit: 1000 }),
-        listarIngresos({ desde: toISODate(INICIO_SEMANA), hasta: toISODate(HOY), limit: 1000 }),
+        listarIngresos({ desde: toISODate(inicioRango), hasta: toISODate(HOY), limit: 1000 }),
         listarIngresos({ limit: 8 }),
         obtenerBalanceNeto({ desde: toISODate(INICIO_MES), hasta: toISODate(HOY) }),
+        listarRecurrencias({ activo: true }),
       ])
       setGastosMes(mes.gastos)
       setGastosSemana(semana.gastos)
@@ -56,6 +76,7 @@ export default function DashboardPage() {
       setIngresosSemana(ingresosSemanaRes.ingresos)
       setIngresosRecientes(ingresosUltimos.ingresos)
       setBalanceNeto(balance.balance)
+      setReglasActivas(reglas || [])
     } catch (error) {
       console.error('Error loading dashboard:', error)
     } finally {
@@ -64,8 +85,8 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    loadDatos()
-  }, [])
+    loadDatos(rangoTendencia)
+  }, [rangoTendencia])
 
   function handleDelete(id) {
     setRecientes(prev => prev.filter(g => g.id !== id))
@@ -111,6 +132,36 @@ export default function DashboardPage() {
     .map(([fecha, total]) => ({ fecha, total }))
     .sort((a, b) => a.fecha.localeCompare(b.fecha))
 
+  // Proyección de días futuros a partir de recurrencias activas (nómina,
+  // renta, suscripciones): el cron solo genera filas reales hasta hoy
+  // (ver web/app/api/cron/generar-recurrencias/route.js), así que para
+  // "adelantar" la tendencia hay que calcular las ocurrencias esperadas
+  // aquí, con la misma lógica de fechas que usa el cron.
+  const proyeccion = useMemo(() => {
+    const manana = toISODate(addDias(HOY, 1))
+    const finFuturo = toISODate(addDias(HOY, rangoTendencia))
+    const gastoPorDia = {}
+    const ingresoPorDia = {}
+
+    reglasActivas.forEach((regla) => {
+      const desde = regla.fecha_inicio > manana ? regla.fecha_inicio : manana
+      const hasta = regla.fecha_fin && regla.fecha_fin < finFuturo ? regla.fecha_fin : finFuturo
+      if (desde > hasta) return
+
+      const bucket = regla.tipo === 'gasto' ? gastoPorDia : ingresoPorDia
+      ocurrenciasEnRango(regla, desde, hasta).forEach((fecha) => {
+        bucket[fecha] = (bucket[fecha] || 0) + regla.monto_default
+      })
+    })
+
+    const aArreglo = (obj) =>
+      Object.entries(obj)
+        .map(([fecha, total]) => ({ fecha, total }))
+        .sort((a, b) => a.fecha.localeCompare(b.fecha))
+
+    return { gasto: aArreglo(gastoPorDia), ingreso: aArreglo(ingresoPorDia) }
+  }, [reglasActivas, rangoTendencia])
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -128,6 +179,8 @@ export default function DashboardPage() {
           Registrar gasto
         </Button>
       </div>
+
+      <AlertasRecurrencias />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -191,8 +244,13 @@ export default function DashboardPage() {
             <TendenciaChart
               data={dataSemana}
               dataSecundaria={dataSemanaIngreso}
+              dataFutura={proyeccion.gasto}
+              dataFuturaSecundaria={proyeccion.ingreso}
               labelPrincipal="Gasto"
               labelIngreso="Ingreso"
+              rango={rangoTendencia}
+              opcionesRango={OPCIONES_RANGO_TENDENCIA}
+              onRangoChange={setRangoTendencia}
             />
           </div>
 

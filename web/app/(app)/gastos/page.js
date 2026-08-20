@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CATEGORIAS, TIPOS_PAGO, CATEGORIA_LABELS, TIPO_PAGO_LABELS } from '@/lib/gastos/schema'
+import { ordenarPorLabel } from '@/lib/utils'
 
 export default function GastosPage() {
   const [gastos, setGastos] = useState([])
@@ -134,7 +135,7 @@ export default function GastosPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas</SelectItem>
-                  {CATEGORIAS.map(cat => (
+                  {ordenarPorLabel(CATEGORIAS, CATEGORIA_LABELS).map(cat => (
                     <SelectItem key={cat} value={cat}>{CATEGORIA_LABELS[cat]}</SelectItem>
                   ))}
                 </SelectContent>
@@ -152,7 +153,7 @@ export default function GastosPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
-                  {TIPOS_PAGO.map(tipo => (
+                  {ordenarPorLabel(TIPOS_PAGO, TIPO_PAGO_LABELS).map(tipo => (
                     <SelectItem key={tipo} value={tipo}>{TIPO_PAGO_LABELS[tipo]}</SelectItem>
                   ))}
                 </SelectContent>

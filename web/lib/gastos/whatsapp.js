@@ -6,17 +6,30 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-// Crear gasto desde mensaje de WhatsApp
-export async function crearGastoDesdeWhatsApp(supabase, userId, texto, mediaUrl, mediaContentType) {
+// Crear gasto desde mensaje de WhatsApp. `opciones.origenAudio` indica que
+// `texto` es una transcripción (no algo que el usuario escribió a mano):
+// el dictado suele ser lenguaje natural ("gasté como doscientos pesos en
+// el oxxo"), no el formato corto "monto + lugar" que espera el regex de
+// parsearTexto, así que ese caso usa extracción con OpenAI en vez de regex.
+export async function crearGastoDesdeWhatsApp(
+  supabase,
+  userId,
+  texto,
+  mediaUrl,
+  mediaContentType,
+  opciones = {}
+) {
   try {
     let gasto = null
 
     // Si hay media (foto/PDF), usar OpenAI Vision
     if (mediaUrl) {
       gasto = await parsearMediaConOpenAI(mediaUrl, mediaContentType)
+    } else if (opciones.origenAudio && texto) {
+      gasto = await parsearTextoConOpenAI(texto)
     }
 
-    // Si no hay media o Vision falló, parsear texto
+    // Si no hay media/audio o la extracción con OpenAI falló, parsear texto
     if (!gasto) {
       gasto = parsearTexto(texto)
     }
@@ -149,6 +162,47 @@ async function parsearMediaConOpenAI(mediaUrl, mediaContentType) {
   } catch (error) {
     console.error('Error en OpenAI Vision:', error)
     return {}
+  }
+}
+
+// Extrae los datos del gasto de una transcripción de audio con OpenAI. A
+// diferencia de parsearTexto (regex para "500 oxxo"), esto interpreta
+// lenguaje natural dictado por voz.
+async function parsearTextoConOpenAI(texto) {
+  try {
+    const result = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'user',
+          content: `Extrae información del gasto de esta transcripción de una nota de voz de WhatsApp: "${texto}"
+
+              - Monto (número entero en centavos, ej: 150050 = $1500.50)
+              - Tienda/comercio (ej: OXXO, Starbucks), o null si no se menciona
+              - Fecha (YYYY-MM-DD, si no aparece usa hoy: ${new Date().toISOString().split('T')[0]})
+              - Categoría (supermercado, restaurantes, cafeteria, transporte, gasolina, salud, farmacia, hogar, servicios, renta, educacion, entretenimiento, ropa, tecnologia, viajes, mascotas, regalos, impuestos, comisiones, otros)
+              - Tipo de pago (efectivo, debito, credito, transferencia, domiciliado, vales, otro; si no se menciona usa efectivo)
+
+              Responde SOLO en JSON sin markdown:
+              {"monto": 150050, "tienda": "OXXO", "fecha": "2025-08-10", "categoria": "otros", "tipo_pago": "efectivo"}`,
+        },
+      ],
+      max_tokens: 500,
+    })
+
+    const content = result.choices[0].message.content
+    const json = JSON.parse(content)
+
+    return {
+      monto: json.monto,
+      tienda: json.tienda,
+      fecha: json.fecha,
+      categoria: json.categoria,
+      tipo_pago: json.tipo_pago,
+    }
+  } catch (error) {
+    console.error('Error en extracción de audio con OpenAI:', error)
+    return null
   }
 }
 

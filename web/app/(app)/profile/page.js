@@ -115,7 +115,7 @@ export default function ProfilePage() {
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="+5216145138306"
+                  placeholder="+5200000000000"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                 />

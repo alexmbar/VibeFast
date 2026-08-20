@@ -6,12 +6,28 @@ import { formatMonto } from '@/lib/gastos/schema'
 import { CHART_COLORS } from '@/lib/theme/chartColors'
 import { useAppTheme } from '@/components/layout/AppTheme'
 
-export default function GastoMensualChart({ data }) {
+// `dataSecundaria` es opcional: si se pasa, la gráfica dibuja barras
+// agrupadas por serie (ej. gasto vs. ingreso) con leyenda; si no, se
+// comporta como una sola serie igual que antes.
+export default function GastoMensualChart({ data, dataSecundaria, labelPrincipal = 'Gasto', labelIngreso = 'Ingreso' }) {
   const { isDark } = useAppTheme()
-  const chartData = data.map((item) => ({
+  const esMultiSerie = !!dataSecundaria
+
+  const serieUno = data.map((item) => ({
     mes: item.mes,
     total: item.total / 100,
+    serie: labelPrincipal,
   }))
+  const chartData = esMultiSerie
+    ? [
+        ...serieUno,
+        ...dataSecundaria.map((item) => ({
+          mes: item.mes,
+          total: item.total / 100,
+          serie: labelIngreso,
+        })),
+      ]
+    : serieUno
 
   const spec = {
     type: 'bar',
@@ -20,16 +36,25 @@ export default function GastoMensualChart({ data }) {
     data: [{ id: 'mensual', values: chartData }],
     xField: 'mes',
     yField: 'total',
-    color: [CHART_COLORS[0]],
+    seriesField: esMultiSerie ? 'serie' : undefined,
+    color: esMultiSerie ? [CHART_COLORS[0], CHART_COLORS[3]] : [CHART_COLORS[0]],
+    legends: esMultiSerie ? { visible: true, orient: 'bottom' } : undefined,
     bar: { style: { cornerRadius: [6, 6, 0, 0] } },
     tooltip: {
       mark: {
-        content: [
-          {
-            key: (datum) => `Mes: ${datum?.mes}`,
-            value: (datum) => formatMonto(Math.round((datum?.total ?? 0) * 100)),
-          },
-        ],
+        content: esMultiSerie
+          ? [
+              {
+                key: (datum) => datum?.serie,
+                value: (datum) => formatMonto(Math.round((datum?.total ?? 0) * 100)),
+              },
+            ]
+          : [
+              {
+                key: (datum) => `Mes: ${datum?.mes}`,
+                value: (datum) => formatMonto(Math.round((datum?.total ?? 0) * 100)),
+              },
+            ],
       },
     },
   }
@@ -37,7 +62,7 @@ export default function GastoMensualChart({ data }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Gasto Mensual</CardTitle>
+        <CardTitle>{esMultiSerie ? 'Gasto e Ingreso Mensual' : 'Gasto Mensual'}</CardTitle>
       </CardHeader>
       <CardContent>
         <div style={{ height: 300 }}>

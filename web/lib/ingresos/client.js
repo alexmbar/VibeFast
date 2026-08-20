@@ -21,6 +21,7 @@ export async function listarIngresos(filters = {}) {
   if (filters.desde) params.append('desde', filters.desde)
   if (filters.hasta) params.append('hasta', filters.hasta)
   if (filters.categoria) params.append('categoria', filters.categoria)
+  if (filters.pendiente) params.append('pendiente', filters.pendiente)
   if (filters.limit) params.append('limit', filters.limit)
   if (filters.offset) params.append('offset', filters.offset)
 

@@ -21,6 +21,7 @@ export async function GET(request) {
   const hasta = searchParams.get('hasta')
   const categoria = searchParams.get('categoria')
   const tipo_pago = searchParams.get('tipo_pago')
+  const pendiente = searchParams.get('pendiente')
   const limit = parseInt(searchParams.get('limit') || '50')
   const offset = parseInt(searchParams.get('offset') || '0')
 
@@ -44,6 +45,9 @@ export async function GET(request) {
   }
   if (tipo_pago && TIPOS_PAGO.includes(tipo_pago)) {
     query = query.eq('tipo_pago', tipo_pago)
+  }
+  if (pendiente === 'true') {
+    query = query.eq('monto_confirmado', false)
   }
 
   const { data, error, count } = await query

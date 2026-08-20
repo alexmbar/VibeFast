@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ordenarPorLabel } from '@/lib/utils'
 
 // Únicos tipo_pago que mapean 1:1 a un tipo de banco del catálogo. Para
 // los demás (transferencia, domiciliado, vales, otro) se muestra el
@@ -213,7 +214,7 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
               <SelectValue placeholder="Selecciona una categoría" />
             </SelectTrigger>
             <SelectContent>
-              {CATEGORIAS.map(cat => (
+              {ordenarPorLabel(CATEGORIAS, CATEGORIA_LABELS).map(cat => (
                 <SelectItem key={cat} value={cat}>
                   {CATEGORIA_LABELS[cat]}
                 </SelectItem>
@@ -234,7 +235,7 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
               <SelectValue placeholder="Selecciona tipo de pago" />
             </SelectTrigger>
             <SelectContent>
-              {TIPOS_PAGO.map(tipo => (
+              {ordenarPorLabel(TIPOS_PAGO, TIPO_PAGO_LABELS).map(tipo => (
                 <SelectItem key={tipo} value={tipo}>
                   {TIPO_PAGO_LABELS[tipo]}
                 </SelectItem>
@@ -270,7 +271,7 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={SIN_BANCO}>Ninguno</SelectItem>
-              {bancos.map(banco => (
+              {[...bancos].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(banco => (
                 <SelectItem key={banco.id} value={String(banco.id)}>
                   {banco.nombre}
                 </SelectItem>

@@ -30,7 +30,7 @@ export default function PhoneGate({ userId }) {
     const trimmed = phone.trim()
 
     if (!PHONE_RE.test(trimmed)) {
-      setError("Formato inválido. Usa + código de país + número, ej. +5216145138306.")
+      setError("Formato inválido. Usa + código de país + número, ej. +5200000000000.")
       return
     }
 
@@ -79,7 +79,7 @@ export default function PhoneGate({ userId }) {
               <Input
                 id="phone"
                 type="tel"
-                placeholder="+5216145138306"
+                placeholder="+5200000000000"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 autoFocus
