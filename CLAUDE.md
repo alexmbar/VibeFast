@@ -161,6 +161,19 @@ el gasto del mes.
 - El diseño visual se basa en las imágenes de referencia en `/design`. Antes
   de construir o ajustar una pantalla, revisa esa carpeta por si hay una
   imagen aplicable; el usuario irá agregando más ahí con el tiempo.
+- Todo `<Select>` (`web/components/ui/select.jsx`, sobre `@base-ui/react`)
+  que tenga un `value` controlado debe recibir también el prop `items`
+  (mapa `{value: label}`, o array `{value, label}[]` para casos con label
+  no serializable a string). Sin `items`, `SelectValue` solo conoce el
+  label de un `<SelectItem>` que ya se montó al menos una vez -- como el
+  contenido está en un portal que se desmonta al cerrar, el trigger
+  muestra el `value` crudo (ej. un `banco_id` numérico) en vez del label
+  en el primer render con un valor precargado (edición, filtros con
+  default) o justo después de cerrar el dropdown. Para enums estáticos
+  con su mapa de labels, usa el helper `selectItems(valores, labels)` de
+  `web/lib/utils.js` (junto a `ordenarPorLabel`); para catálogos
+  dinámicos (bancos), arma el mapa inline:
+  `Object.fromEntries(bancos.map(b => [String(b.id), b.nombre]))`.
 
 ## Base de datos
 

@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ordenarPorLabel } from '@/lib/utils'
+import { ordenarPorLabel, selectItems } from '@/lib/utils'
 
 // Únicos tipo_pago que mapean 1:1 a un tipo de banco del catálogo. Para
 // los demás (transferencia, domiciliado, vales, otro) se muestra el
@@ -209,6 +209,7 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
           <Select
             value={formData.categoria}
             onValueChange={(value) => handleSelectChange('categoria', value)}
+            items={selectItems(CATEGORIAS, CATEGORIA_LABELS)}
           >
             <SelectTrigger id="categoria" className="w-full" aria-invalid={!!errors.categoria}>
               <SelectValue placeholder="Selecciona una categoría" />
@@ -230,6 +231,7 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
           <Select
             value={formData.tipo_pago}
             onValueChange={(value) => handleSelectChange('tipo_pago', value)}
+            items={selectItems(TIPOS_PAGO, TIPO_PAGO_LABELS)}
           >
             <SelectTrigger id="tipo_pago" className="w-full" aria-invalid={!!errors.tipo_pago}>
               <SelectValue placeholder="Selecciona tipo de pago" />
@@ -265,6 +267,7 @@ export default function GastoForm({ initialData = null, onSuccess, onCancel }) {
             value={formData.banco_id || SIN_BANCO}
             onValueChange={(value) => handleSelectChange('banco_id', value === SIN_BANCO ? '' : value)}
             disabled={esEfectivo || loadingBancos}
+            items={{ [SIN_BANCO]: 'Ninguno', ...Object.fromEntries(bancos.map(banco => [String(banco.id), banco.nombre])) }}
           >
             <SelectTrigger id="banco_id" className="w-full" aria-invalid={!!errors.banco_id}>
               <SelectValue placeholder="Selecciona un banco" />

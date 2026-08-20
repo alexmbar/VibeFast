@@ -30,11 +30,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ordenarPorLabel } from '@/lib/utils'
+import { ordenarPorLabel, selectItems } from '@/lib/utils'
 
 const TIPOS_PAGO_BANCO = ['debito', 'credito']
 const SIN_BANCO = '__sin_banco__'
 const DIAS_MES = Array.from({ length: 31 }, (_, i) => i + 1)
+const DIAS_MES_ITEMS = Object.fromEntries(DIAS_MES.map(dia => [String(dia), dia]))
 
 export default function RecurrenciaForm({ initialData = null, onSuccess, onCancel }) {
   const [loading, setLoading] = useState(false)
@@ -180,7 +181,11 @@ export default function RecurrenciaForm({ initialData = null, onSuccess, onCance
         {/* Tipo */}
         <div className="space-y-1.5">
           <Label htmlFor="tipo">Tipo</Label>
-          <Select value={formData.tipo} onValueChange={(value) => handleSelectChange('tipo', value)}>
+          <Select
+            value={formData.tipo}
+            onValueChange={(value) => handleSelectChange('tipo', value)}
+            items={selectItems(TIPOS, TIPO_LABELS)}
+          >
             <SelectTrigger id="tipo" className="w-full" aria-invalid={!!errors.tipo}>
               <SelectValue placeholder="Selecciona un tipo" />
             </SelectTrigger>
@@ -221,6 +226,7 @@ export default function RecurrenciaForm({ initialData = null, onSuccess, onCance
           <Select
             value={formData.categoria}
             onValueChange={(value) => handleSelectChange('categoria', value)}
+            items={selectItems(categoriasDe(formData.tipo), categoriaLabelsDe(formData.tipo))}
           >
             <SelectTrigger id="categoria" className="w-full" aria-invalid={!!errors.categoria}>
               <SelectValue placeholder="Selecciona una categoría" />
@@ -244,6 +250,7 @@ export default function RecurrenciaForm({ initialData = null, onSuccess, onCance
               <Select
                 value={formData.tipo_pago}
                 onValueChange={(value) => handleSelectChange('tipo_pago', value)}
+                items={selectItems(TIPOS_PAGO, TIPO_PAGO_LABELS)}
               >
                 <SelectTrigger id="tipo_pago" className="w-full" aria-invalid={!!errors.tipo_pago}>
                   <SelectValue placeholder="Selecciona tipo de pago" />
@@ -275,6 +282,7 @@ export default function RecurrenciaForm({ initialData = null, onSuccess, onCance
                 value={formData.banco_id || SIN_BANCO}
                 onValueChange={(value) => handleSelectChange('banco_id', value === SIN_BANCO ? '' : value)}
                 disabled={esEfectivo || loadingBancos}
+                items={{ [SIN_BANCO]: 'Ninguno', ...Object.fromEntries(bancos.map(banco => [String(banco.id), banco.nombre])) }}
               >
                 <SelectTrigger id="banco_id" className="w-full" aria-invalid={!!errors.banco_id}>
                   <SelectValue placeholder="Selecciona un banco" />
@@ -300,6 +308,7 @@ export default function RecurrenciaForm({ initialData = null, onSuccess, onCance
           <Select
             value={formData.frecuencia}
             onValueChange={(value) => handleSelectChange('frecuencia', value)}
+            items={selectItems(FRECUENCIAS, FRECUENCIA_LABELS)}
           >
             <SelectTrigger id="frecuencia" className="w-full" aria-invalid={!!errors.frecuencia}>
               <SelectValue placeholder="Selecciona una frecuencia" />
@@ -320,6 +329,7 @@ export default function RecurrenciaForm({ initialData = null, onSuccess, onCance
             <Select
               value={formData.dia_semana}
               onValueChange={(value) => handleSelectChange('dia_semana', value)}
+              items={Object.fromEntries(DIA_SEMANA_LABELS.map((label, i) => [String(i), label]))}
             >
               <SelectTrigger id="dia_semana" className="w-full" aria-invalid={!!errors.dia_semana}>
                 <SelectValue placeholder="Selecciona un día" />
@@ -340,6 +350,7 @@ export default function RecurrenciaForm({ initialData = null, onSuccess, onCance
             <Select
               value={formData.dia_mes_1}
               onValueChange={(value) => handleSelectChange('dia_mes_1', value)}
+              items={DIAS_MES_ITEMS}
             >
               <SelectTrigger id="dia_mes_1" className="w-full" aria-invalid={!!errors.dias_mes}>
                 <SelectValue placeholder="Selecciona un día" />
@@ -364,6 +375,7 @@ export default function RecurrenciaForm({ initialData = null, onSuccess, onCance
               <Select
                 value={formData.dia_mes_1}
                 onValueChange={(value) => handleSelectChange('dia_mes_1', value)}
+                items={DIAS_MES_ITEMS}
               >
                 <SelectTrigger id="dia_mes_1" className="w-full" aria-invalid={!!errors.dias_mes}>
                   <SelectValue placeholder="Día" />
@@ -380,6 +392,7 @@ export default function RecurrenciaForm({ initialData = null, onSuccess, onCance
               <Select
                 value={formData.dia_mes_2}
                 onValueChange={(value) => handleSelectChange('dia_mes_2', value)}
+                items={DIAS_MES_ITEMS}
               >
                 <SelectTrigger id="dia_mes_2" className="w-full" aria-invalid={!!errors.dias_mes}>
                   <SelectValue placeholder="Día" />

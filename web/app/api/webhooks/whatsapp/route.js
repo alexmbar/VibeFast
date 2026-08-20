@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { crearGastoDesdeWhatsApp } from '@/lib/gastos/whatsapp'
-import { crearRetiroDesdeWhatsApp } from '@/lib/retiros/whatsapp'
+import { crearRetiroDesdeWhatsApp, crearCargaInicialDesdeWhatsApp } from '@/lib/retiros/whatsapp'
 import { verificarFirmaKapso, enviarMensajeWhatsApp } from '@/lib/whatsapp/kapso'
 import { transcribirAudioWhatsApp } from '@/lib/whatsapp/audio'
 
@@ -43,7 +43,7 @@ export async function POST(request) {
     )
     const { data: user } = await supabase
       .from('profiles')
-      .select('id, full_name, whatsapp_confirmado_at')
+      .select('id, full_name, whatsapp_confirmado_at, onboarding_step')
       .eq('phone', userPhone)
       .single()
 
@@ -71,6 +71,16 @@ export async function POST(request) {
       }
 
       body = transcripcion
+    }
+
+    // Mientras el usuario esté en el paso de carga inicial del wizard de
+    // onboarding, cualquier mensaje entrante se interpreta como el efectivo
+    // que tiene contado (sin prefijo ni banco), no como gasto/retiro normal.
+    // El wizard avanza el paso cuando el usuario confirma el monto en la UI.
+    if (user.onboarding_step === 'carga_inicial') {
+      const resultado = await crearCargaInicialDesdeWhatsApp(supabase, user.id, body)
+      await responderCargaInicialWhatsApp(userPhone, resultado, transcripcion)
+      return NextResponse.json({ success: resultado.success })
     }
 
     // Un mensaje que empieza con "retiro" se captura como retiro de
@@ -124,6 +134,28 @@ async function confirmarPrimerMensaje(supabase, user, userPhone) {
       .eq('id', user.id)
   } catch (error) {
     console.error('Error mandando bienvenida de WhatsApp:', error)
+  }
+}
+
+// Confirma la carga inicial de efectivo (o el error) por WhatsApp. El
+// usuario todavía tiene que confirmar el monto en el wizard -- este
+// mensaje solo le avisa que ya llegó, para que vuelva a la pantalla.
+async function responderCargaInicialWhatsApp(userPhone, resultado, transcripcion) {
+  try {
+    const sufijoTranscripcion = transcripcion ? `\n(escuché: "${transcripcion}")` : ''
+
+    if (!resultado.success) {
+      await enviarMensajeWhatsApp(userPhone, `${resultado.error}${sufijoTranscripcion}`)
+      return
+    }
+
+    const { cargaInicial } = resultado
+    await enviarMensajeWhatsApp(
+      userPhone,
+      `Recibido: ${formatoMoneda.format(cargaInicial.monto / 100)} en efectivo. Vuelve a la app para confirmarlo.${sufijoTranscripcion}`
+    )
+  } catch (error) {
+    console.error('Error mandando confirmacion de carga inicial por WhatsApp:', error)
   }
 }
 

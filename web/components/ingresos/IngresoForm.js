@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
 import { crearIngreso, actualizarIngreso } from '@/lib/ingresos/client'
+import { listarBancos } from '@/lib/bancos/client'
 import { CATEGORIAS, CATEGORIA_LABELS } from '@/lib/ingresos/schema'
 import { pesosTocentavos, centavosToPesos, formatDate } from '@/lib/gastos/schema'
 import { Button } from '@/components/ui/button'
@@ -18,19 +20,44 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ordenarPorLabel } from '@/lib/utils'
+import { ordenarPorLabel, selectItems } from '@/lib/utils'
+
+const SIN_BANCO = '__sin_banco__'
 
 export default function IngresoForm({ initialData = null, onSuccess, onCancel }) {
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({})
+  const [bancos, setBancos] = useState([])
+  const [loadingBancos, setLoadingBancos] = useState(true)
   const [formData, setFormData] = useState({
     monto: initialData ? centavosToPesos(initialData.monto) : '',
     fecha: initialData ? formatDate(initialData.fecha) : formatDate(new Date()),
     categoria: initialData?.categoria || '',
+    banco_id: initialData?.banco_id ? String(initialData.banco_id) : '',
     notas: initialData?.notas || '',
   })
 
   const isEdit = !!initialData
+
+  // Un ingreso puede caer en cualquier tipo de cuenta (a diferencia de un
+  // retiro, que solo puede ser de débito), así que se listan todos.
+  useEffect(() => {
+    let cancelled = false
+    setLoadingBancos(true)
+    listarBancos({ activo: true })
+      .then(data => {
+        if (!cancelled) setBancos(data)
+      })
+      .catch(() => {
+        if (!cancelled) setBancos([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingBancos(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -57,6 +84,7 @@ export default function IngresoForm({ initialData = null, onSuccess, onCancel })
         monto: pesosTocentavos(formData.monto),
         fecha: formData.fecha,
         categoria: formData.categoria,
+        banco_id: formData.banco_id || null,
         notas: formData.notas || null,
       }
 
@@ -121,6 +149,7 @@ export default function IngresoForm({ initialData = null, onSuccess, onCancel })
           <Select
             value={formData.categoria}
             onValueChange={(value) => handleSelectChange('categoria', value)}
+            items={selectItems(CATEGORIAS, CATEGORIA_LABELS)}
           >
             <SelectTrigger id="categoria" className="w-full" aria-invalid={!!errors.categoria}>
               <SelectValue placeholder="Selecciona una categoría" />
@@ -134,6 +163,37 @@ export default function IngresoForm({ initialData = null, onSuccess, onCancel })
             </SelectContent>
           </Select>
           {errors.categoria && <p className="text-sm text-destructive">{errors.categoria}</p>}
+        </div>
+
+        {/* Banco (opcional) */}
+        <div className="space-y-1.5">
+          <Label htmlFor="banco_id">Banco (opcional)</Label>
+          <Select
+            value={formData.banco_id || SIN_BANCO}
+            onValueChange={(value) => handleSelectChange('banco_id', value === SIN_BANCO ? '' : value)}
+            disabled={loadingBancos}
+            items={{ [SIN_BANCO]: 'Ninguno', ...Object.fromEntries(bancos.map(banco => [String(banco.id), banco.nombre])) }}
+          >
+            <SelectTrigger id="banco_id" className="w-full" aria-invalid={!!errors.banco_id}>
+              <SelectValue placeholder="Selecciona un banco" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={SIN_BANCO}>Ninguno</SelectItem>
+              {[...bancos].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(banco => (
+                <SelectItem key={banco.id} value={String(banco.id)}>{banco.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {!loadingBancos && bancos.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              No tienes bancos registrados.{' '}
+              <Link href="/bancos/create" className="underline hover:text-foreground">
+                Agrega uno
+              </Link>
+              .
+            </p>
+          )}
+          {errors.banco_id && <p className="text-sm text-destructive">{errors.banco_id}</p>}
         </div>
 
         {/* Notas (opcional) */}

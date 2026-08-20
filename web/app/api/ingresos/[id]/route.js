@@ -89,9 +89,34 @@ export async function PATCH(request, { params }) {
   // Cualquier PATCH implica que el usuario revisó la fila -- así se
   // "confirma" una fila generada por una recurrencia sin necesitar un
   // endpoint aparte (ver web/lib/recurrencias).
+  const dataToUpdate = { ...body, monto_confirmado: true }
+
+  // Resolver banco_id contra el catálogo del usuario, igual que gastos
+  // (web/app/api/gastos/[id]/route.js).
+  if (body.banco_id !== undefined) {
+    if (body.banco_id) {
+      const { data: banco, error: bancoError } = await supabase
+        .from('bancos')
+        .select('id')
+        .eq('id', body.banco_id)
+        .eq('user_id', user.id)
+        .single()
+
+      if (bancoError || !banco) {
+        return NextResponse.json(
+          { message: 'Datos inválidos', errors: { banco_id: 'Banco inválido' } },
+          { status: 400 }
+        )
+      }
+      dataToUpdate.banco_id = banco.id
+    } else {
+      dataToUpdate.banco_id = null
+    }
+  }
+
   const { data, error } = await supabase
     .from('ingresos')
-    .update({ ...body, monto_confirmado: true })
+    .update(dataToUpdate)
     .eq('id', id)
     .eq('user_id', user.id)
     .select()

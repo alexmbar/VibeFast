@@ -143,6 +143,7 @@ export default function RetiroForm({ initialData = null, onSuccess, onCancel }) 
             value={formData.banco_id}
             onValueChange={(value) => handleSelectChange('banco_id', value)}
             disabled={loadingBancos}
+            items={Object.fromEntries(bancos.map(banco => [String(banco.id), banco.nombre]))}
           >
             <SelectTrigger id="banco_id" className="w-full" aria-invalid={!!errors.banco_id}>
               <SelectValue placeholder="Selecciona un banco" />

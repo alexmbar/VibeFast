@@ -13,12 +13,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 // Formato E.164 simplificado: + seguido de 10 a 15 dígitos.
 const PHONE_RE = /^\+\d{10,15}$/
 
-// Paso obligatorio antes de usar el resto de la app: sin teléfono
-// registrado, la captura por WhatsApp no puede identificar al usuario
+// Paso 1 del wizard de onboarding: sin teléfono registrado, la captura
+// por WhatsApp no puede identificar al usuario
 // (web/app/api/webhooks/whatsapp/route.js busca por profiles.phone).
-// Bloquear aquí evita que alguien le escriba al bot antes de estar
-// registrado y se quede sin respuesta.
-export default function PhoneGate({ userId }) {
+// Al guardar, avanza a 'carga_inicial' (ver web/components/onboarding/OnboardingWizard.js).
+export default function PasoTelefono({ userId }) {
   const router = useRouter()
   const supabase = createClient()
   const [phone, setPhone] = useState("")
@@ -39,7 +38,7 @@ export default function PhoneGate({ userId }) {
 
     const { error: updateError } = await supabase
       .from("profiles")
-      .update({ phone: trimmed })
+      .update({ phone: trimmed, onboarding_step: "carga_inicial" })
       .eq("id", userId)
 
     if (updateError) {

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ordenarPorLabel } from '@/lib/utils'
+import { ordenarPorLabel, selectItems } from '@/lib/utils'
 
 export default function RecurrenciasPage() {
   const [recurrencias, setRecurrencias] = useState([])
@@ -71,6 +71,7 @@ export default function RecurrenciasPage() {
               <Select
                 value={filters.tipo || 'todos'}
                 onValueChange={(value) => handleSelectFilterChange('tipo', value, 'todos')}
+                items={{ todos: 'Todos', ...selectItems(TIPOS, TIPO_LABELS) }}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
@@ -89,6 +90,7 @@ export default function RecurrenciasPage() {
               <Select
                 value={filters.activo || 'todas'}
                 onValueChange={(value) => handleSelectFilterChange('activo', value, 'todas')}
+                items={{ todas: 'Todas', true: 'Activas', false: 'Inactivas' }}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />

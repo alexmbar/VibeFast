@@ -1,12 +1,14 @@
 // Parseo y creacion de retiros desde WhatsApp (solo texto, ej. "retiro 2000 bbva")
 
+const REGEX_MONTO = /[\$]?\s*(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)\s*(.+)?/i
+
 // Extrae monto y el texto de banco de un mensaje de retiro.
 // Reutiliza la misma regex numerica que el parser de gastos.
 export function parsearRetiro(texto) {
   const sinPrefijo = texto.replace(/^\s*retiro\s+/i, '').trim()
   const retiro = { monto: null, bancoTexto: null }
 
-  const matches = sinPrefijo.match(/[\$]?\s*(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)\s*(.+)?/i)
+  const matches = sinPrefijo.match(REGEX_MONTO)
   if (matches) {
     const pesos = parseFloat(matches[1].replace(/,/g, ''))
     retiro.monto = Math.round(pesos * 100) // Convertir a centavos
@@ -17,6 +19,18 @@ export function parsearRetiro(texto) {
   }
 
   return retiro
+}
+
+// Extrae solo el monto de un mensaje (sin banco). Usado por la carga
+// inicial de efectivo del wizard: durante ese paso, cualquier texto
+// entrante del usuario se interpreta como el efectivo que tiene contado,
+// sin prefijo ni banco.
+function extraerMonto(texto) {
+  const matches = texto.trim().match(REGEX_MONTO)
+  if (!matches) return null
+
+  const pesos = parseFloat(matches[1].replace(/,/g, ''))
+  return Math.round(pesos * 100)
 }
 
 // Busca el banco de tipo debito del usuario que coincide con el texto
@@ -118,6 +132,71 @@ export async function crearRetiroDesdeWhatsApp(supabase, userId, texto) {
     }
   } catch (error) {
     console.error('Error en crearRetiroDesdeWhatsApp:', error)
+    return {
+      success: false,
+      error: 'Error procesando tu mensaje',
+    }
+  }
+}
+
+// Crear o corregir la carga inicial de efectivo del wizard de onboarding
+// (paso profiles.onboarding_step = 'carga_inicial'). Se guarda como un
+// retiro sin banco (es_carga_inicial=true, ver 023_onboarding_wizard.sql):
+// mientras el usuario no confirme el monto en el wizard, puede corregirlo
+// reenviando otro mensaje -- por eso hace upsert manual en vez de insert.
+export async function crearCargaInicialDesdeWhatsApp(supabase, userId, texto) {
+  try {
+    const monto = extraerMonto(texto)
+
+    if (!monto) {
+      return {
+        success: false,
+        error: 'No pude extraer el monto. Manda solo el número, ej. "3000".',
+      }
+    }
+
+    const fecha = new Date().toISOString().split('T')[0]
+
+    const { data: existente } = await supabase
+      .from('retiros')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('es_carga_inicial', true)
+      .maybeSingle()
+
+    const { data, error } = existente
+      ? await supabase
+          .from('retiros')
+          .update({ monto, fecha })
+          .eq('id', existente.id)
+          .select()
+          .single()
+      : await supabase
+          .from('retiros')
+          .insert({
+            user_id: userId,
+            monto,
+            fecha,
+            banco_id: null,
+            es_carga_inicial: true,
+            notas: 'Carga inicial capturada por WhatsApp',
+          })
+          .select()
+          .single()
+
+    if (error) {
+      return {
+        success: false,
+        error: 'Error al guardar la carga inicial',
+      }
+    }
+
+    return {
+      success: true,
+      cargaInicial: data,
+    }
+  } catch (error) {
+    console.error('Error en crearCargaInicialDesdeWhatsApp:', error)
     return {
       success: false,
       error: 'Error procesando tu mensaje',

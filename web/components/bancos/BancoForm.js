@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ordenarPorLabel } from '@/lib/utils'
+import { ordenarPorLabel, selectItems } from '@/lib/utils'
 
 export default function BancoForm({ initialData = null, onSuccess, onCancel }) {
   const [loading, setLoading] = useState(false)
@@ -39,7 +39,8 @@ export default function BancoForm({ initialData = null, onSuccess, onCancel }) {
   const esCredito = formData.tipo === 'credito'
 
   // Los campos de credito no aplican a un banco tipo=debito: si el usuario
-  // cambia el tipo, se limpian para no mandar datos inconsistentes.
+  // cambia el tipo, se limpian para no mandar datos inconsistentes. alias
+  // no se limpia aqui: aplica a cualquier tipo.
   useEffect(() => {
     if (!esCredito) {
       setFormData(prev => ({
@@ -47,7 +48,6 @@ export default function BancoForm({ initialData = null, onSuccess, onCancel }) {
         dia_corte: '',
         dia_limite_pago: '',
         limite_credito: '',
-        alias: '',
         tasa_interes: '',
       }))
     }
@@ -82,7 +82,7 @@ export default function BancoForm({ initialData = null, onSuccess, onCancel }) {
           esCredito && formData.dia_limite_pago !== '' ? Number(formData.dia_limite_pago) : null,
         limite_credito:
           esCredito && formData.limite_credito !== '' ? pesosTocentavos(formData.limite_credito) : null,
-        alias: esCredito && formData.alias.trim() ? formData.alias.trim() : null,
+        alias: formData.alias.trim() ? formData.alias.trim() : null,
         tasa_interes: esCredito && formData.tasa_interes !== '' ? Number(formData.tasa_interes) : null,
       }
 
@@ -129,6 +129,7 @@ export default function BancoForm({ initialData = null, onSuccess, onCancel }) {
           <Select
             value={formData.tipo}
             onValueChange={(value) => handleSelectChange('tipo', value)}
+            items={selectItems(TIPOS_BANCO, TIPO_BANCO_LABELS)}
           >
             <SelectTrigger id="tipo" className="w-full" aria-invalid={!!errors.tipo}>
               <SelectValue placeholder="Selecciona un tipo" />
@@ -145,6 +146,21 @@ export default function BancoForm({ initialData = null, onSuccess, onCancel }) {
           <p className="text-xs text-muted-foreground">
             Si usas el mismo banco para débito y crédito por separado, regístralo dos veces (uno por tipo).
           </p>
+        </div>
+
+        {/* Alias: aplica a cualquier tipo */}
+        <div className="space-y-1.5">
+          <Label htmlFor="alias">Alias (opcional)</Label>
+          <Input
+            id="alias"
+            type="text"
+            name="alias"
+            value={formData.alias}
+            onChange={handleChange}
+            placeholder="Últimos 4 dígitos o apodo, ej. 4532 o cuenta nómina"
+            aria-invalid={!!errors.alias}
+          />
+          {errors.alias && <p className="text-sm text-destructive">{errors.alias}</p>}
         </div>
 
         {/* Datos de credito (solo aplican si tipo=credito) */}
@@ -199,20 +215,6 @@ export default function BancoForm({ initialData = null, onSuccess, onCancel }) {
               {errors.limite_credito && (
                 <p className="text-sm text-destructive">{errors.limite_credito}</p>
               )}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="alias">Alias (opcional)</Label>
-              <Input
-                id="alias"
-                type="text"
-                name="alias"
-                value={formData.alias}
-                onChange={handleChange}
-                placeholder="Últimos 4 dígitos o apodo, ej. 4532 o Nu Ultravioleta"
-                aria-invalid={!!errors.alias}
-              />
-              {errors.alias && <p className="text-sm text-destructive">{errors.alias}</p>}
             </div>
 
             <div className="space-y-1.5">

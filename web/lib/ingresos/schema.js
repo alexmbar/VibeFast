@@ -48,6 +48,9 @@ export function validateIngreso(data) {
     errors.categoria = 'Categoría inválida'
   }
 
+  // banco_id es opcional; su existencia y pertenencia al usuario se
+  // resuelve en la API (necesita consultar la tabla bancos).
+
   return {
     valid: Object.keys(errors).length === 0,
     errors,

@@ -88,6 +88,28 @@ export async function POST(request) {
     )
   }
 
+  // Resolver banco_id contra el catálogo del usuario, igual que gastos
+  // (web/app/api/gastos/route.js). A diferencia de gastos, ingresos no
+  // tiene columna `banco` denormalizada porque nunca existió como texto
+  // libre -- no hay consumidor legado que la necesite.
+  let bancoId = null
+  if (body.banco_id) {
+    const { data: banco, error: bancoError } = await supabase
+      .from('bancos')
+      .select('id')
+      .eq('id', body.banco_id)
+      .eq('user_id', user.id)
+      .single()
+
+    if (bancoError || !banco) {
+      return NextResponse.json(
+        { message: 'Datos inválidos', errors: { banco_id: 'Banco inválido' } },
+        { status: 400 }
+      )
+    }
+    bancoId = banco.id
+  }
+
   const { data, error } = await supabase
     .from('ingresos')
     .insert({
@@ -95,6 +117,7 @@ export async function POST(request) {
       monto: body.monto,
       fecha: body.fecha,
       categoria: body.categoria,
+      banco_id: bancoId,
       notas: body.notas || null,
     })
     .select()

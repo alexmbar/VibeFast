@@ -33,7 +33,7 @@ export async function GET() {
   const [retirosResult, gastosResult] = await Promise.all([
     supabase
       .from('retiros')
-      .select('id, fecha, monto, banco:bancos(nombre)')
+      .select('id, fecha, monto, es_carga_inicial, banco:bancos(nombre)')
       .eq('user_id', user.id)
       .order('fecha', { ascending: false })
       .limit(LIMIT_MOVIMIENTOS),
@@ -59,7 +59,7 @@ export async function GET() {
       tipo: 'retiro',
       fecha: r.fecha,
       monto: r.monto,
-      descripcion: `Retiro — ${r.banco?.nombre || 'Banco'}`,
+      descripcion: r.es_carga_inicial ? 'Carga inicial' : `Retiro — ${r.banco?.nombre || 'Banco'}`,
     })),
     ...gastosResult.data.map(g => ({
       id: `gasto-${g.id}`,

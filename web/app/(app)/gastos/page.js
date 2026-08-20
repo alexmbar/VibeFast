@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CATEGORIAS, TIPOS_PAGO, CATEGORIA_LABELS, TIPO_PAGO_LABELS } from '@/lib/gastos/schema'
-import { ordenarPorLabel } from '@/lib/utils'
+import { ordenarPorLabel, selectItems } from '@/lib/utils'
 
 export default function GastosPage() {
   const [gastos, setGastos] = useState([])
@@ -129,6 +129,7 @@ export default function GastosPage() {
               <Select
                 value={filters.categoria || 'todas'}
                 onValueChange={(value) => handleSelectFilterChange('categoria', value, 'todas')}
+                items={{ todas: 'Todas', ...selectItems(CATEGORIAS, CATEGORIA_LABELS) }}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
@@ -147,6 +148,7 @@ export default function GastosPage() {
               <Select
                 value={filters.tipo_pago || 'todos'}
                 onValueChange={(value) => handleSelectFilterChange('tipo_pago', value, 'todos')}
+                items={{ todos: 'Todos', ...selectItems(TIPOS_PAGO, TIPO_PAGO_LABELS) }}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />

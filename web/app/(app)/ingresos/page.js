@@ -11,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ordenarPorLabel } from '@/lib/utils'
+import { ordenarPorLabel, selectItems } from '@/lib/utils'
 
 export default function IngresosPage() {
   const [ingresos, setIngresos] = useState([])
@@ -100,6 +100,7 @@ export default function IngresosPage() {
               <Select
                 value={filters.categoria || 'todas'}
                 onValueChange={(value) => handleSelectFilterChange('categoria', value, 'todas')}
+                items={{ todas: 'Todas', ...selectItems(CATEGORIAS, CATEGORIA_LABELS) }}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
