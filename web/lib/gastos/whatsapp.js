@@ -2,6 +2,8 @@ import OpenAI from 'openai'
 import { CATEGORIAS, TIPOS_PAGO } from './schema'
 import { descargarMediaKapso } from '@/lib/whatsapp/kapso'
 import { subirTicketADrive } from '@/lib/google-drive/client'
+import { registrarIntegracion, registrarUsoOpenai } from '@/lib/admin/db'
+import { costoChatCentavos } from '@/lib/admin/costos'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -29,9 +31,9 @@ export async function crearGastoDesdeWhatsApp(
     // a Google Drive.
     if (mediaUrl) {
       mediaBuffer = await descargarMediaKapso(mediaUrl)
-      gasto = await parsearMediaConOpenAI(mediaBuffer, mediaContentType)
+      gasto = await parsearMediaConOpenAI(supabase, userId, mediaBuffer, mediaContentType)
     } else if (opciones.origenAudio && texto) {
-      gasto = await parsearTextoConOpenAI(texto)
+      gasto = await parsearTextoConOpenAI(supabase, userId, texto)
     }
 
     // Si no hay media/audio o la extracción con OpenAI falló, parsear texto
@@ -136,7 +138,8 @@ export async function crearGastoDesdeWhatsApp(
 // Parsear imagen/PDF con OpenAI Vision. `buffer` ya viene descargado
 // (ver crearGastoDesdeWhatsApp, se descarga una sola vez y se reusa
 // para la subida a Drive).
-async function parsearMediaConOpenAI(buffer, mediaContentType) {
+async function parsearMediaConOpenAI(supabase, userId, buffer, mediaContentType) {
+  const modelo = 'gpt-4-vision-preview'
   try {
     const base64 = Buffer.from(buffer).toString('base64')
 
@@ -145,7 +148,7 @@ async function parsearMediaConOpenAI(buffer, mediaContentType) {
 
     // Enviar a OpenAI Vision
     const result = await openai.chat.completions.create({
-      model: 'gpt-4-vision-preview',
+      model: modelo,
       messages: [
         {
           role: 'user',
@@ -177,6 +180,15 @@ async function parsearMediaConOpenAI(buffer, mediaContentType) {
     const content = result.choices[0].message.content
     const json = JSON.parse(content)
 
+    await registrarUsoOpenai(supabase, {
+      userId,
+      contexto: 'vision_ticket',
+      modelo,
+      tokensEntrada: result.usage?.prompt_tokens,
+      tokensSalida: result.usage?.completion_tokens,
+      costoEstimadoCentavos: costoChatCentavos(modelo, result.usage?.prompt_tokens, result.usage?.completion_tokens),
+    })
+
     return {
       monto: json.monto,
       tienda: json.tienda,
@@ -186,6 +198,12 @@ async function parsearMediaConOpenAI(buffer, mediaContentType) {
     }
   } catch (error) {
     console.error('Error en OpenAI Vision:', error)
+    await registrarIntegracion(supabase, {
+      tipo: 'openai_vision',
+      nivel: 'error',
+      userId,
+      detalle: { mensaje: error.message },
+    })
     return {}
   }
 }
@@ -193,10 +211,11 @@ async function parsearMediaConOpenAI(buffer, mediaContentType) {
 // Extrae los datos del gasto de una transcripción de audio con OpenAI. A
 // diferencia de parsearTexto (regex para "500 oxxo"), esto interpreta
 // lenguaje natural dictado por voz.
-async function parsearTextoConOpenAI(texto) {
+async function parsearTextoConOpenAI(supabase, userId, texto) {
+  const modelo = 'gpt-4o-mini'
   try {
     const result = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: modelo,
       messages: [
         {
           role: 'user',
@@ -218,6 +237,15 @@ async function parsearTextoConOpenAI(texto) {
     const content = result.choices[0].message.content
     const json = JSON.parse(content)
 
+    await registrarUsoOpenai(supabase, {
+      userId,
+      contexto: 'audio_texto_gasto',
+      modelo,
+      tokensEntrada: result.usage?.prompt_tokens,
+      tokensSalida: result.usage?.completion_tokens,
+      costoEstimadoCentavos: costoChatCentavos(modelo, result.usage?.prompt_tokens, result.usage?.completion_tokens),
+    })
+
     return {
       monto: json.monto,
       tienda: json.tienda,
@@ -227,6 +255,12 @@ async function parsearTextoConOpenAI(texto) {
     }
   } catch (error) {
     console.error('Error en extracción de audio con OpenAI:', error)
+    await registrarIntegracion(supabase, {
+      tipo: 'webhook_whatsapp',
+      nivel: 'error',
+      userId,
+      detalle: { etapa: 'audio_texto_gasto', mensaje: error.message },
+    })
     return null
   }
 }

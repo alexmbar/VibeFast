@@ -45,7 +45,7 @@ export async function POST(request) {
   }
 
   const encoder = new TextEncoder()
-  const events = runGastosAgent({ messages, conversationId })
+  const events = runGastosAgent({ messages, conversationId, userId: user.id, supabase })
 
   const stream = new ReadableStream({
     async start(controller) {

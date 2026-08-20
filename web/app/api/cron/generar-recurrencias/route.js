@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { ocurrenciasEnRango, siguienteDia } from '@/lib/recurrencias/fechas'
 import { categoriaLabelsDe } from '@/lib/recurrencias/schema'
 import { enviarMensajeWhatsApp } from '@/lib/whatsapp/kapso'
+import { registrarIntegracion } from '@/lib/admin/db'
 
 const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 
@@ -109,6 +110,12 @@ export async function GET(request) {
 
         if (insertError) {
           errores.push(`regla ${regla.id} (${fecha}): ${insertError.message}`)
+          await registrarIntegracion(supabase, {
+            tipo: 'cron_recurrencias',
+            nivel: 'error',
+            userId: regla.user_id,
+            detalle: { reglaId: regla.id, fecha, mensaje: insertError.message },
+          })
           continue
         }
 
@@ -121,6 +128,12 @@ export async function GET(request) {
       await supabase.from('recurrencias').update({ ultima_generacion: hoy }).eq('id', regla.id)
     } catch (err) {
       errores.push(`regla ${regla.id}: ${err.message}`)
+      await registrarIntegracion(supabase, {
+        tipo: 'cron_recurrencias',
+        nivel: 'error',
+        userId: regla.user_id,
+        detalle: { reglaId: regla.id, mensaje: err.message },
+      })
     }
   }
 

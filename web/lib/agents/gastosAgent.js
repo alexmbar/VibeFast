@@ -12,6 +12,8 @@
 import { getGastosTools, executeGastosTool } from "@/lib/tools/gastosRegistry.js"
 import { runAgent } from "./graph.js"
 import { logToolCall } from "@/lib/audit.js"
+import { registrarUsoOpenai } from "@/lib/admin/db.js"
+import { costoChatCentavos } from "@/lib/admin/costos.js"
 
 // TODO CLAUDE.md: cuando exista zona horaria configurable por usuario,
 // leerla de ahí en vez de asumir America/Mexico_City.
@@ -34,9 +36,10 @@ Antes de usar una herramienta, explica brevemente qué vas a consultar y por qu�
 Si te preguntan por dinero que el usuario espera recibir o pagar en el futuro (ej. "¿cuánto voy a recibir mañana?", "¿qué gastos tengo esta semana?"), usa la herramienta proximos_recurrentes: no existen filas reales para fechas futuras (el cron que las genera solo corre hasta hoy), así que la única fuente es la proyección de reglas de recurrencia activas. Esa herramienta ya marca sus resultados como proyección (proyeccion: true, nota); en tu respuesta acláralo siempre con tus propias palabras (por ejemplo "según tu nómina recurrente, tienes programado recibir X el día Y; es un estimado, no un monto confirmado") y nunca lo presentes como un hecho garantizado. Si no hay ninguna regla de recurrencia activa que caiga en el rango preguntado, dilo explícitamente en vez de responder que no tienes esa información.`
 }
 
-// messages: [{ role, content }] · conversationId?: string
-// Devuelve el async generator de eventos del agente.
-export function runGastosAgent({ messages, conversationId }) {
+// messages: [{ role, content }] · conversationId?: string · userId/supabase:
+// para registrar el costo de OpenAI en uso_openai (best-effort, no bloquea
+// el streaming si falla).
+export function runGastosAgent({ messages, conversationId, userId, supabase }) {
   return runAgent({
     messages,
     conversationId,
@@ -44,5 +47,15 @@ export function runGastosAgent({ messages, conversationId }) {
     tools: getGastosTools(),
     executeTool: executeGastosTool,
     onToolCall: logToolCall,
+    onUsage: ({ model, usage }) => {
+      registrarUsoOpenai(supabase, {
+        userId,
+        contexto: "agente_chat",
+        modelo: model,
+        tokensEntrada: usage.prompt_tokens,
+        tokensSalida: usage.completion_tokens,
+        costoEstimadoCentavos: costoChatCentavos(model, usage.prompt_tokens, usage.completion_tokens),
+      })
+    },
   })
 }

@@ -137,6 +137,32 @@ export async function listarIntegraciones(supabase, { tipo, nivel, resuelto, ord
   return { eventos: data, total: count ?? 0 }
 }
 
+// Best-effort: nunca lanza. Se llama desde el cron y el webhook de
+// WhatsApp, ninguno de los dos debe caerse porque falló un log.
+export async function registrarIntegracion(supabase, { tipo, nivel = "error", detalle, userId } = {}) {
+  const { error } = await supabase.from("integraciones_log").insert({
+    tipo,
+    nivel,
+    detalle: detalle ?? null,
+    user_id: userId ?? null,
+  })
+  if (error) console.error("[admin] error al registrar integraciones_log:", error.message)
+}
+
+// Igual de best-effort que registrarIntegracion. costoEstimadoCentavos
+// se calcula con web/lib/admin/costos.js antes de llamar esto.
+export async function registrarUsoOpenai(supabase, { userId, contexto, modelo, tokensEntrada = 0, tokensSalida = 0, costoEstimadoCentavos = 0 }) {
+  const { error } = await supabase.from("uso_openai").insert({
+    user_id: userId,
+    contexto,
+    modelo,
+    tokens_entrada: tokensEntrada,
+    tokens_salida: tokensSalida,
+    costo_estimado_centavos: costoEstimadoCentavos,
+  })
+  if (error) console.error("[admin] error al registrar uso_openai:", error.message)
+}
+
 export async function obtenerCostosOpenai(supabase, { desde, hasta }) {
   const [porDia, porUsuario] = await Promise.all([
     supabase.rpc("admin_costos_openai_diario", { p_desde: desde, p_hasta: hasta }),

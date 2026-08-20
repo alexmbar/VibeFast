@@ -4,6 +4,7 @@ import { crearGastoDesdeWhatsApp } from '@/lib/gastos/whatsapp'
 import { crearRetiroDesdeWhatsApp, crearCargaInicialDesdeWhatsApp } from '@/lib/retiros/whatsapp'
 import { verificarFirmaKapso, enviarMensajeWhatsApp } from '@/lib/whatsapp/kapso'
 import { transcribirAudioWhatsApp } from '@/lib/whatsapp/audio'
+import { createAdminClient, registrarIntegracion } from '@/lib/admin/db'
 
 const formatoMoneda = new Intl.NumberFormat('es-MX', {
   style: 'currency',
@@ -60,7 +61,7 @@ export async function POST(request) {
     // la detección de "retiro").
     let transcripcion = null
     if (esAudio && mediaUrl) {
-      transcripcion = await transcribirAudioWhatsApp(mediaUrl, mediaContentType)
+      transcripcion = await transcribirAudioWhatsApp(supabase, user.id, mediaUrl, mediaContentType)
 
       if (!transcripcion) {
         await enviarMensajeWhatsApp(
@@ -107,6 +108,13 @@ export async function POST(request) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error en webhook WhatsApp:', error)
+    // Este catch-all corre incluso si la falla fue antes de crear el
+    // cliente de sesion (ej. JSON invalido), asi que arma uno propio.
+    await registrarIntegracion(createAdminClient(), {
+      tipo: 'webhook_whatsapp',
+      nivel: 'error',
+      detalle: { mensaje: error.message },
+    })
     return NextResponse.json(
       { message: 'Error interno' },
       { status: 500 }

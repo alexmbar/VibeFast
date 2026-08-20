@@ -46,19 +46,25 @@ const AgentState = Annotation.Root({
 
 // Llama al modelo en streaming y ensambla el resultado: emite los
 // tokens de contenido y reconstruye los tool_calls fragmentados.
-async function callModel({ model, messages, tools, emit }) {
+async function callModel({ model, messages, tools, emit, onUsage }) {
   const stream = await openai.chat.completions.create({
     model,
     messages,
     tools: tools.length ? tools : undefined,
     tool_choice: tools.length ? "auto" : undefined,
     stream: true,
+    // Sin esto el stream nunca trae `usage` -- necesario para el costo
+    // operativo que ve /admin/costos (ver uso_openai).
+    stream_options: { include_usage: true },
   })
 
   let content = ""
   const toolCalls = [] // indexado por `index` del delta
 
   for await (const chunk of stream) {
+    // El chunk final con include_usage no trae choices, solo `usage`.
+    if (chunk.usage) onUsage?.(chunk.usage)
+
     const delta = chunk.choices[0]?.delta
     if (!delta) continue
 
@@ -89,6 +95,7 @@ export async function* runAgent({
   tools = [],
   executeTool,
   onToolCall,
+  onUsage,
   model = config.ai.agentModel,
   maxSteps = 6,
 }) {
@@ -121,6 +128,7 @@ export async function* runAgent({
       messages: state.messages,
       tools,
       emit,
+      onUsage: (usage) => onUsage?.({ model, usage }),
     })
 
     // Mensaje del assistant tal cual lo necesita la siguiente vuelta.
