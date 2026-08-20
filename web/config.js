@@ -108,10 +108,10 @@ const config = {
       { label: "Docs", href: "/docs" },
     ],
     hero: {
-      eyebrow: "Control de Gastos",
-      title: "Tus gastos, bajo control.",
+      eyebrow: "Control de Gastos por WhatsApp",
+      title: "Tus gastos, tu efectivo y tus tarjetas, bajo control.",
       subtitle:
-        "Captura gastos por WhatsApp, foto de ticket o texto. Consulta reportes web. Controla tu dinero sin esfuerzo.",
+        "Captura gastos, retiros de efectivo e ingresos por WhatsApp — texto, foto de ticket o PDF del estado de cuenta. Consulta reportes, cartera y bancos en la web.",
       cta: { label: "Empezar", href: "/login" },
       ctaSecondary: { label: "Ver docs", href: "/docs" },
     },
@@ -127,9 +127,9 @@ const config = {
           body: "Los recibos se pierden. No sabes cuánto gastaste en comida vs. transporte.",
         },
         {
-          icon: "BarChart",
-          title: "Sin reportes",
-          body: "No ves patrones. ¿Cuánto invertiste en tecnología este mes? No hay forma de saberlo.",
+          icon: "Wallet",
+          title: "Efectivo y tarjetas mezclados",
+          body: "No sabes cuánto traes en la cartera ni cuánto debes en la tarjeta de crédito, todo se ve igual.",
         },
         {
           icon: "Zap",
@@ -140,38 +140,38 @@ const config = {
     },
     features: {
       eyebrow: "Lo que tienes",
-      title: "Control total de tus gastos.",
+      title: "Control total de tu dinero.",
       subtitle: "Captura rápida, reportes inteligentes, visibilidad total.",
       items: [
         {
           icon: "MessageCircle",
           title: "Captura por WhatsApp",
-          body: "Envía un mensaje: '500 oxxo'. Foto del ticket. PDF del estado de cuenta. El bot entiende todo.",
+          body: "Envía un mensaje: '500 oxxo'. Foto del ticket. PDF del estado de cuenta. El bot entiende todo y lo registra solo.",
+        },
+        {
+          icon: "Wallet",
+          title: "Retiros y Cartera",
+          body: "Registra tus retiros de efectivo y ve tu saldo disponible en tiempo real, sin mezclarlo con tus gastos.",
+        },
+        {
+          icon: "CreditCard",
+          title: "Bancos y tarjetas",
+          body: "Catálogo de tus cuentas de débito y tarjetas de crédito, con límite, día de corte y fecha límite de pago.",
+        },
+        {
+          icon: "Repeat",
+          title: "Gastos e ingresos recurrentes",
+          body: "Nómina, renta y suscripciones se generan solas cada semana o quincena, marcadas como pendientes hasta que confirmas el monto.",
         },
         {
           icon: "BarChart3",
           title: "Reportes detallados",
-          body: "Ve tu gasto por categoría, tipo de pago, tienda, período. Descubre patrones en tu dinero.",
+          body: "Ve tu gasto por categoría, tipo de pago, banco o tienda, con tablas ordenables y balance neto de ingresos contra gastos.",
         },
         {
-          icon: "Filter",
-          title: "Filtros potentes",
-          body: "Busca por fecha, categoría, banco, tienda. Segmenta tus gastos como quieras.",
-        },
-        {
-          icon: "Tag",
-          title: "Categorización automática",
-          body: "AI entiende el contexto. 'Starbucks' es entretenimiento. 'Uber' es transporte.",
-        },
-        {
-          icon: "Lock",
-          title: "Privado y seguro",
-          body: "Solo tú ves tus gastos. Cifrado de punta a punta. Sin rastreo ni publicidad.",
-        },
-        {
-          icon: "Zap",
-          title: "Sincronización en tiempo real",
-          body: "Captura en el acto. Reportes actualizados al instante. Acceso desde cualquier dispositivo.",
+          icon: "Bot",
+          title: "Agente conversacional",
+          body: "Pregúntale a tu agente de gastos en lenguaje natural y consulta tu historial sin abrir reportes.",
         },
       ],
     },
@@ -189,7 +189,15 @@ const config = {
         },
         {
           q: "¿Cómo funciona la captura por WhatsApp?",
-          a: "Envías un mensaje con el gasto ('500 oxxo') o foto del ticket. Nuestro AI extrae monto, tienda, categoría. Listo en 1 segundo.",
+          a: "Envías un mensaje con el gasto ('500 oxxo'), una foto del ticket o el PDF de tu estado de cuenta. También puedes registrar un retiro de efectivo ('retiro 2000 bbva'). Nuestro AI extrae monto, tienda y categoría, y te confirma por WhatsApp.",
+        },
+        {
+          q: "¿Qué es la Cartera y cómo funciona?",
+          a: "Es tu saldo de efectivo disponible: se calcula solo con tus retiros menos lo que gastas en efectivo, así que siempre está actualizado sin que captures nada extra.",
+        },
+        {
+          q: "¿Cómo funcionan los gastos e ingresos recurrentes?",
+          a: "Das de alta la regla una vez (nómina cada quincena, renta el día 5) y cada ocurrencia se genera sola, marcada como pendiente hasta que confirmas el monto real.",
         },
         {
           q: "¿Puedo exportar mis datos?",
@@ -214,7 +222,7 @@ const config = {
         },
         {
           quote:
-            "El reporte mensual me muestra exactamente en qué se va mi dinero. Ya no me sorprendo al fin de mes.",
+            "La Cartera me resolvió algo que ninguna otra app: por fin sé cuánto efectivo traigo sin tener que contarlo.",
           author: "Carlos Ruiz",
           role: "Emprendedor",
         },
@@ -230,7 +238,7 @@ const config = {
       eyebrow: "Comienza hoy",
       title: "Toma el control de tu dinero en 1 minuto.",
       subtitle:
-        "Login con Google, envía tu primer gasto por WhatsApp, y empieza a ver tus reportes. No hay nada que configurar.",
+        "Login con Google, envía tu primer gasto por WhatsApp, y empieza a ver tus reportes, cartera y bancos. No hay nada que configurar.",
       cta: { label: "Empezar ahora", href: "/login" },
       ctaSecondary: { label: "Leer las docs", href: "/docs" },
     },
