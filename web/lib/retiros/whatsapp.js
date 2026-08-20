@@ -141,7 +141,7 @@ export async function crearRetiroDesdeWhatsApp(supabase, userId, texto) {
 
 // Crear o corregir la carga inicial de efectivo del wizard de onboarding
 // (paso profiles.onboarding_step = 'carga_inicial'). Se guarda como un
-// retiro sin banco (es_carga_inicial=true, ver 023_onboarding_wizard.sql):
+// retiro sin banco (es_carga_inicial=true, ver 024_onboarding_wizard.sql):
 // mientras el usuario no confirme el monto en el wizard, puede corregirlo
 // reenviando otro mensaje -- por eso hace upsert manual en vez de insert.
 export async function crearCargaInicialDesdeWhatsApp(supabase, userId, texto) {

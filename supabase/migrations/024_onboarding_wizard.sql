@@ -1,6 +1,6 @@
 -- ============================================================
 -- Wizard de onboarding: carga inicial de efectivo por WhatsApp
--- Migracion 023
+-- Migracion 024
 -- ------------------------------------------------------------
 -- Extiende el registro de un solo paso (telefono) a un wizard de
 -- 4 pasos: telefono, carga inicial de efectivo (validada por

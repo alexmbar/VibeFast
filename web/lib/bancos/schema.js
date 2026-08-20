@@ -8,7 +8,7 @@ export const TIPO_BANCO_LABELS = {
 }
 
 // Solo tienen sentido en bancos tipo='credito' -- ver 022_bancos_datos_credito.sql.
-// alias no va aqui: aplica a cualquier tipo (ver 023_onboarding_wizard.sql).
+// alias no va aqui: aplica a cualquier tipo (ver 024_onboarding_wizard.sql).
 export const CAMPOS_CREDITO = ['dia_corte', 'dia_limite_pago', 'limite_credito', 'tasa_interes']
 
 function campoVacio(valor) {
