@@ -274,16 +274,18 @@ por Kapso) sí lo permite sin ese trámite.
   nadie lo lee — un cron de Vercel que responde 200 no dispara ninguna
   alerta aunque `errores` no esté vacío. Falta decidir el canal (¿WhatsApp
   al usuario afectado, como ya hace `notificarUsuarios()` para las
-  generaciones exitosas? ¿un aviso interno tipo email/Slack al admin?) y
-  confirmar primero si `notificarUsuarios()` mismo está tragando fallos:
-  ya envía las confirmaciones como texto libre envuelto en try/catch
-  "best-effort", que probablemente falla en silencio si el usuario lleva
-  más de 24h sin escribirle al bot (mismo límite de ventana de 24h que
-  bloquea el recordatorio de pago de crédito, ver abajo). Las alertas
-  *dentro de la app* (pendientes de confirmar / próximas a generarse) ya
-  están resueltas — ver `web/lib/recurrencias/alertas.js` y
-  `AlertasRecurrencias` (dashboard, `/recurrencias`, badge en el nav);
-  esto es solo para cuando el cron mismo no corre bien.
+  generaciones exitosas? ¿un aviso interno tipo email/Slack al admin?).
+  ~~Confirmar primero si `notificarUsuarios()` mismo está tragando
+  fallos~~ — confirmado y resuelto el 2026-08-24: sí tragaba el error de
+  envío (típicamente por la ventana de 24h de WhatsApp) con solo
+  `console.error`, sin dejar rastro consultable. Ahora también llama
+  `registrarIntegracion(..., tipo: 'cron_recurrencias_notificacion')`, así
+  que el fallo queda en el log de integraciones aunque siga sin haber un
+  canal de alerta externo. Las alertas *dentro de la app* (pendientes de
+  confirmar / próximas a generarse) ya están resueltas — ver
+  `web/lib/recurrencias/alertas.js` y `AlertasRecurrencias` (dashboard,
+  `/recurrencias`, badge en el nav); esto es solo para cuando el cron
+  mismo no corre bien.
 
 - ~~Retiros en efectivo~~ — resuelto: tabla `retiros` separada de `gastos`
   (migración `015_retiros.sql`), alimenta Cartera. Ver "Retiros de efectivo y
@@ -331,13 +333,9 @@ por Kapso) sí lo permite sin ese trámite.
        `kapso.js` (manda `type: "template"` en vez de `type: "text"`) y
        usarla en el cron nuevo en vez de `enviarMensajeWhatsApp()`. Ya
        desbloqueado — pendiente de implementar.
-    - Mismo problema ya existe hoy en `notificarUsuarios()` del cron de
-      recurrencias (`generar-recurrencias/route.js`) — manda
-      confirmaciones proactivas como texto libre, envueltas en
-      try/catch "best-effort" que probablemente ya traga fallos
-      silenciosos cuando el usuario lleva más de 24h sin escribirle al
-      bot. Vale la pena confirmarlo antes de construir el recordatorio
-      de crédito.
+    - ~~Mismo problema ya existe hoy en `notificarUsuarios()`~~ —
+      confirmado y resuelto el 2026-08-24, ver arriba ("Alertar cuando el
+      cron de recurrencias falla").
 
 - CONFIGURACIONES: agregar un apartado para configurar zona horaria, tipo de
   moneda y formato de fecha (por usuario, no global). Ojo: `fecha` es `date`

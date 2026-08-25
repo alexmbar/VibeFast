@@ -173,6 +173,12 @@ async function notificarUsuarios(supabase, generadasPorUsuario) {
       )
     } catch (err) {
       console.error('[cron/recurrencias] error mandando notificacion WhatsApp:', err)
+      await registrarIntegracion(supabase, {
+        tipo: 'cron_recurrencias_notificacion',
+        nivel: 'error',
+        userId: perfil.id,
+        detalle: { mensaje: err.message },
+      })
     }
   }
 }
