@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { Loader2, Wallet, Calculator, CalendarDays, TrendingUp, Scale } from 'lucide-react'
-import { listarGastos } from '@/lib/gastos/client'
-import { listarIngresos, obtenerBalanceNeto } from '@/lib/ingresos/client'
 import { listarBancos } from '@/lib/bancos/client'
-import { obtenerGastosPorCorte } from '@/lib/reportes/client'
+import { obtenerReportesResumen, obtenerGastosPorCorte } from '@/lib/reportes/client'
 import { formatMonto } from '@/lib/gastos/schema'
 import GastoMensualChart from '@/components/reportes/GastoMensualChart'
 import CategoriaChart from '@/components/reportes/CategoriaChart'
@@ -23,10 +21,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
+const RESUMEN_VACIO = { total_gastos: 0, total_ingresos: 0, num_gastos: 0, num_ingresos: 0, dias_unicos: 0 }
+
 export default function ReportesPage() {
-  const [gastos, setGastos] = useState([])
-  const [ingresos, setIngresos] = useState([])
-  const [balanceNeto, setBalanceNeto] = useState(0)
+  const [resumen, setResumen] = useState(RESUMEN_VACIO)
+  const [porMes, setPorMes] = useState([])
+  const [porDia, setPorDia] = useState([])
+  const [porCategoria, setPorCategoria] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [filtros, setFiltros] = useState({
     desde: '',
@@ -64,14 +65,11 @@ export default function ReportesPage() {
       const filters = {}
       if (filtros.desde) filters.desde = filtros.desde
       if (filtros.hasta) filters.hasta = filtros.hasta
-      const [{ gastos: dataGastos }, { ingresos: dataIngresos }, balance] = await Promise.all([
-        listarGastos({ ...filters, limit: 1000 }),
-        listarIngresos({ ...filters, limit: 1000 }),
-        obtenerBalanceNeto(filters),
-      ])
-      setGastos(dataGastos)
-      setIngresos(dataIngresos)
-      setBalanceNeto(balance.balance)
+      const data = await obtenerReportesResumen(filters)
+      setResumen(data.resumen)
+      setPorMes(data.porMes)
+      setPorDia(data.porDia)
+      setPorCategoria(data.porCategoria)
     } catch (error) {
       console.error('Error loading reportes:', error)
     } finally {
@@ -84,65 +82,21 @@ export default function ReportesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtros])
 
-  // Agrupa una lista de movimientos (gastos o ingresos) por mes/día,
-  // ambas series comparten esta lógica para que las gráficas duales
-  // (gasto vs. ingreso) queden alineadas.
-  function agruparPorMes(movimientos) {
-    const porMes = {}
-    movimientos.forEach(m => {
-      const mes = m.fecha.substring(0, 7) // YYYY-MM
-      porMes[mes] = (porMes[mes] || 0) + m.monto
-    })
-    return Object.entries(porMes)
-      .map(([mes, total]) => ({ mes, total }))
-      .sort((a, b) => a.mes.localeCompare(b.mes))
-      .slice(-12) // Últimos 12 meses
-  }
+  // Cada serie dual (gasto vs. ingreso) sale de la misma fila por
+  // mes/dia que regresa la API (gastos_ingresos_por_mes/dia, migracion
+  // 036) -- se separa aqui en dos arreglos porque GastoMensualChart y
+  // TendenciaChart esperan data/dataSecundaria como series independientes.
+  const dataMensual = porMes.map(({ mes, total_gastos }) => ({ mes, total: total_gastos }))
+  const dataMensualIngreso = porMes.map(({ mes, total_ingresos }) => ({ mes, total: total_ingresos }))
+  const dataTendencia = porDia.map(({ fecha, total_gastos }) => ({ fecha, total: total_gastos }))
+  const dataTendenciaIngreso = porDia.map(({ fecha, total_ingresos }) => ({ fecha, total: total_ingresos }))
+  const dataCategoria = porCategoria
 
-  function agruparPorFecha(movimientos) {
-    const porFecha = {}
-    movimientos.forEach(m => {
-      porFecha[m.fecha] = (porFecha[m.fecha] || 0) + m.monto
-    })
-    return Object.entries(porFecha)
-      .map(([fecha, total]) => ({ fecha, total }))
-      .sort((a, b) => a.fecha.localeCompare(b.fecha))
-      .slice(-30) // Últimos 30 días
-  }
-
-  // Calcular datos para gráficos
-  function procesarDatos() {
-    const dataMensual = agruparPorMes(gastos)
-    const dataMensualIngreso = agruparPorMes(ingresos)
-    const dataTendencia = agruparPorFecha(gastos)
-    const dataTendenciaIngreso = agruparPorFecha(ingresos)
-
-    // Top 5 categorías de gasto
-    const gastoCategoria = {}
-    gastos.forEach(g => {
-      gastoCategoria[g.categoria] = (gastoCategoria[g.categoria] || 0) + g.monto
-    })
-    const dataCategoria = Object.entries(gastoCategoria)
-      .map(([categoria, total]) => ({ categoria, total }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 5)
-
-    return {
-      dataMensual,
-      dataMensualIngreso,
-      dataCategoria,
-      dataTendencia,
-      dataTendenciaIngreso,
-    }
-  }
-
-  const { dataMensual, dataMensualIngreso, dataCategoria, dataTendencia, dataTendenciaIngreso } = procesarDatos()
-
-  // Totales
-  const totalGastos = gastos.reduce((sum, g) => sum + g.monto, 0)
-  const totalIngresos = ingresos.reduce((sum, i) => sum + i.monto, 0)
-  const promedioDiario = gastos.length > 0 ? totalGastos / gastos.length : 0
-  const gastoDiasUnicos = new Set(gastos.map(g => g.fecha)).size
+  const totalGastos = resumen.total_gastos
+  const totalIngresos = resumen.total_ingresos
+  const balanceNeto = totalIngresos - totalGastos
+  const promedioDiario = resumen.num_gastos > 0 ? totalGastos / resumen.num_gastos : 0
+  const gastoDiasUnicos = resumen.dias_unicos
 
   if (isLoading) {
     return (
@@ -152,7 +106,7 @@ export default function ReportesPage() {
     )
   }
 
-  if (gastos.length === 0 && ingresos.length === 0 && bancosCredito.length === 0) {
+  if (totalGastos === 0 && totalIngresos === 0 && bancosCredito.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-lg text-muted-foreground">No hay gastos ni ingresos para mostrar</p>
@@ -262,7 +216,7 @@ export default function ReportesPage() {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold font-mono">{formatMonto(totalGastos)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{gastos.length} registros</p>
+            <p className="text-xs text-muted-foreground mt-1">{resumen.num_gastos} registros</p>
           </CardContent>
         </Card>
 
@@ -277,7 +231,7 @@ export default function ReportesPage() {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold font-mono">{formatMonto(totalIngresos)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{ingresos.length} registros</p>
+            <p className="text-xs text-muted-foreground mt-1">{resumen.num_ingresos} registros</p>
           </CardContent>
         </Card>
 

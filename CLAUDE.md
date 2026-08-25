@@ -335,6 +335,21 @@ por Kapso) sí lo permite sin ese trámite.
       confirmado y resuelto el 2026-08-24, ver arriba ("Alertar cuando el
       cron de recurrencias falla").
 
+- ~~Truncamiento silencioso en las tarjetas/gráficas de `/reportes`~~ —
+  resuelto el 2026-08-25: al construir el reporte por periodo de corte se
+  detectó que "Gasto Total", "Ingreso Total", "Gasto Promedio", "Días con
+  Gasto" y las tres gráficas (mensual, categoría, tendencia) sumaban en JS
+  sobre `listarGastos`/`listarIngresos` con `limit: 1000` — el mismo
+  patrón de bug que el propio TODO ya advertía para Cartera y para este
+  reporte, pero que nunca se corrigió aquí. Con más de 1000 movimientos
+  en el rango filtrado, esas cifras quedaban truncadas sin ningún aviso.
+  Se reemplazó por 4 funciones SQL nuevas (`gastos_ingresos_resumen`,
+  `gastos_ingresos_por_mes`, `gastos_ingresos_por_dia`,
+  `gastos_por_categoria`, en `036_reportes_funciones.sql`), expuestas por
+  un solo endpoint (`GET /api/reportes/resumen`) — mismo patrón que
+  `balance_neto`. `reportes/page.js` ya no llama `listarGastos`/
+  `listarIngresos` en absoluto.
+
 - CONFIGURACIONES: agregar un apartado para configurar zona horaria, tipo de
   moneda y formato de fecha (por usuario, no global). Ojo: `fecha` es `date`
   por diseño (ver "Reglas de esquema"); la zona horaria configurable aplica a
