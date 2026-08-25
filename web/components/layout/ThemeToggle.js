@@ -1,36 +1,24 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTheme } from "next-themes"
 import { Sun, Moon } from "lucide-react"
 
-const LIGHT = "vibefast"
-const DARK = "vibefast-dark"
-
-// Alterna el tema claro/oscuro escribiendo data-theme en <html> y
-// guardando la preferencia en localStorage (la lee el script del layout).
+// Toggle claro/oscuro compartido por (app), /admin y /docs, respaldado por
+// next-themes (persiste en localStorage y evita el flash de tema incorrecto).
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState(LIGHT)
+  const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    setTheme(document.documentElement.getAttribute("data-theme") || LIGHT)
   }, [])
 
-  function toggle() {
-    const next = theme === DARK ? LIGHT : DARK
-    document.documentElement.setAttribute("data-theme", next)
-    try {
-      localStorage.setItem("theme", next)
-    } catch {}
-    setTheme(next)
-  }
-
-  const isDark = theme === DARK
+  const isDark = resolvedTheme === "dark"
 
   return (
     <button
-      onClick={toggle}
+      onClick={() => setTheme(isDark ? "light" : "dark")}
       className="btn btn-ghost btn-sm btn-square"
       aria-label={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
       title="Cambiar tema"

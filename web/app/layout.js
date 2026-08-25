@@ -1,5 +1,6 @@
 import "./globals.css"
 import { Space_Grotesk, DM_Sans } from "next/font/google"
+import { ThemeProvider } from "next-themes"
 import config from "@/config"
 
 const spaceGrotesk = Space_Grotesk({
@@ -45,18 +46,19 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang={config.app.locale}
-      data-theme="vibefast"
       suppressHydrationWarning
       className={`${spaceGrotesk.variable} ${dmSans.variable}`}
       style={{ "--color-primary": config.brand.primary }}
     >
       <body className="bg-base-100 text-base-content">
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('theme');if(t==='vibefast'||t==='vibefast-dark'){document.documentElement.setAttribute('data-theme',t)}}catch(e){}`,
-          }}
-        />
-        {children}
+        <ThemeProvider
+          attribute="data-theme"
+          value={{ light: "vibefast", dark: "vibefast-dark" }}
+          defaultTheme="system"
+          enableSystem
+        >
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )

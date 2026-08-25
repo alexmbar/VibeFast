@@ -3,7 +3,6 @@ import { redirect } from "next/navigation"
 import config from "@/config"
 import { getUser, createClient } from "@/lib/supabase/server"
 import UserMenu from "@/components/auth/UserMenu"
-import { AppThemeProvider } from "@/components/layout/AppTheme"
 import Logo from "@/components/Logo"
 
 // Layout de /admin. El middleware ya valida profiles.role = 'admin'
@@ -24,25 +23,23 @@ export default async function AdminLayout({ children }) {
   if (profile?.role !== "admin") redirect(config.auth.afterLoginUrl)
 
   return (
-    <AppThemeProvider>
-      <div className="flex min-h-screen flex-col bg-background text-foreground">
-        <header className="sticky top-0 z-40 border-b bg-card">
-          <div className="flex items-center justify-between px-4 py-3">
-            <Link href="/admin" className="flex items-center gap-2 font-bold">
-              <Logo className="size-7" />
-              Admin
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <header className="sticky top-0 z-40 border-b bg-card shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3">
+          <Link href="/admin" className="flex items-center gap-2 font-bold">
+            <Logo className="size-7" />
+            Admin
+          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/gastos" className="text-sm text-base-content/70 hover:underline">
+              Volver a la app
             </Link>
-            <div className="flex items-center gap-3">
-              <Link href="/gastos" className="text-sm text-base-content/70 hover:underline">
-                Volver a la app
-              </Link>
-              <UserMenu user={user} />
-            </div>
+            <UserMenu user={user} />
           </div>
-        </header>
+        </div>
+      </header>
 
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
-      </div>
-    </AppThemeProvider>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
+    </div>
   )
 }

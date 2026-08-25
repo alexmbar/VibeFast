@@ -10,33 +10,36 @@
 @plugin "daisyui";
 
 /* ============================================================
-   Tema de marca VibeFast (Flat Design)
-   Paleta: azul cielo (primary/accent/CTA) + slate (neutral).
+   Tema de marca VibeFast — inspirado en el sistema de diseño de Odoo
+   (ciruela/morado de marca + teal de acento sobre neutros cálidos),
+   sin copiarlo pixel a pixel.
    El primary real lo inyecta config.brand.primary desde layout.js
-   como --color-primary inline (config = fuente de verdad).
+   como --color-primary inline (config = fuente de verdad); el valor
+   de --color-primary de cada theme de abajo queda como fallback/
+   documentación de la intención de marca por modo.
    ============================================================ */
 @plugin "daisyui/theme" {
   name: "vibefast";
   default: true;
   prefersdark: false;
   color-scheme: light;
-  --color-primary: #0ea5e9;
+  --color-primary: #714b67;
   --color-primary-content: #ffffff;
-  --color-secondary: #0284c7;
+  --color-secondary: #00a09d;
   --color-secondary-content: #ffffff;
-  --color-accent: #0ea5e9;
+  --color-accent: #00a09d;
   --color-accent-content: #ffffff;
-  --color-neutral: #1e293b;
-  --color-neutral-content: #f8fafc;
+  --color-neutral: #2c2c2c;
+  --color-neutral-content: #f8f7f8;
   --color-base-100: #ffffff;
-  --color-base-200: #f8fafc;
-  --color-base-300: #e2e8f0;
-  --color-base-content: #1e293b;
-  --color-info: #0ea5e9;
-  --color-success: #16a34a;
-  --color-warning: #f59e0b;
-  --color-error: #dc2626;
-  --radius-box: 1rem;
+  --color-base-200: #f4f2f4;
+  --color-base-300: #e1dce1;
+  --color-base-content: #2c2c2c;
+  --color-info: #2c8fcb;
+  --color-success: #28a745;
+  --color-warning: #f0ad4e;
+  --color-error: #dc3545;
+  --radius-box: 0.75rem;
   --radius-field: 0.5rem;
   --radius-selector: 0.5rem;
 }
@@ -46,23 +49,23 @@
   default: false;
   prefersdark: true;
   color-scheme: dark;
-  --color-primary: #38bdf8;
-  --color-primary-content: #0f172a;
-  --color-secondary: #0ea5e9;
-  --color-secondary-content: #0f172a;
-  --color-accent: #38bdf8;
-  --color-accent-content: #0f172a;
-  --color-neutral: #e2e8f0;
-  --color-neutral-content: #0f172a;
-  --color-base-100: #141b2e;
-  --color-base-200: #0a0f1e;
-  --color-base-300: #232d45;
-  --color-base-content: #e2e8f0;
-  --color-info: #38bdf8;
+  --color-primary: #a9739c;
+  --color-primary-content: #1a1417;
+  --color-secondary: #3fbfb9;
+  --color-secondary-content: #0f1717;
+  --color-accent: #3fbfb9;
+  --color-accent-content: #0f1717;
+  --color-neutral: #e7e3e6;
+  --color-neutral-content: #1a1417;
+  --color-base-100: #1e1b1e;
+  --color-base-200: #17151a;
+  --color-base-300: #332f35;
+  --color-base-content: #edeaec;
+  --color-info: #5ba3d9;
   --color-success: #4ade80;
   --color-warning: #fbbf24;
   --color-error: #f87171;
-  --radius-box: 1rem;
+  --radius-box: 0.75rem;
   --radius-field: 0.5rem;
   --radius-selector: 0.5rem;
 }

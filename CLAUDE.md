@@ -324,15 +324,13 @@ por Kapso) sí lo permite sin ese trámite.
        `recordatorio_pago_credito` (categoría `UTILITY`, `es_MX`,
        `parameter_format: "NAMED"`, params `nombre_banco`, `fecha_limite`,
        `dias_restantes`) creado y enviado a revisión de Meta el
-       2026-08-19, estado `Submitted` en el dashboard de Kapso.
-    2. Esperar aprobación de Meta (no es instantáneo, contarlo en el
-       tiempo de implementación). **Revisar estado en Kapso ~2026-08-22**
-       (3 días después del submit) y avisar si ya quedó `Approved` o si
-       Meta la rechazó.
+       2026-08-19.
+    2. ~~Esperar aprobación de Meta~~ — hecho: estado `Approved` en el
+       dashboard de Kapso, confirmado el 2026-08-24.
     3. Agregar `enviarPlantillaWhatsApp(to, templateName, params)` en
        `kapso.js` (manda `type: "template"` en vez de `type: "text"`) y
-       usarla en el cron nuevo en vez de `enviarMensajeWhatsApp()`. Bloqueado
-       hasta que el paso 2 quede en `Approved`.
+       usarla en el cron nuevo en vez de `enviarMensajeWhatsApp()`. Ya
+       desbloqueado — pendiente de implementar.
     - Mismo problema ya existe hoy en `notificarUsuarios()` del cron de
       recurrencias (`generar-recurrencias/route.js`) — manda
       confirmaciones proactivas como texto libre, envueltas en

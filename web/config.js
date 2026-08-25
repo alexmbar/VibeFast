@@ -36,7 +36,7 @@ const config = {
   // -----------------------------------------------------------
   brand: {
     // Color primario en HEX. DaisyUI lo aplica como --color-primary via theme.
-    primary: "#0ea5e9", // sky-500 (azul cielo)
+    primary: "#714B67", // ciruela Odoo (inspirado en su paleta de marca)
     // Logo: puede ser texto o ruta a /public/logo.svg
     logoText: "Controla Gasto",
     logoSrc: null,
