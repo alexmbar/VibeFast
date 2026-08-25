@@ -38,7 +38,11 @@ export default async function AppLayout({ children }) {
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <UserMenu user={user} />
+            {/* En md+ el usuario vive al pie del sidebar (estilo Vercel); en
+                mobile no hay sidebar, así que se queda aquí como único acceso. */}
+            <div className="md:hidden">
+              <UserMenu user={user} />
+            </div>
           </div>
         </div>
       </header>
@@ -47,8 +51,11 @@ export default async function AppLayout({ children }) {
         <CuentaSuspendida />
       ) : profile?.onboarding_step === "completado" ? (
         <div className="mx-auto flex w-full max-w-6xl flex-1 gap-6 px-4 py-6">
-          <aside className="hidden w-52 shrink-0 md:block">
+          <aside className="hidden w-52 shrink-0 flex-col justify-between md:flex">
             <AppNav />
+            <div className="border-t pt-3">
+              <UserMenu user={user} className="w-full justify-start" />
+            </div>
           </aside>
 
           <main className="min-w-0 flex-1">{children}</main>

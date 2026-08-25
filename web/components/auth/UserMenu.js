@@ -4,6 +4,7 @@ import Link from "next/link"
 import { signOut } from "@/lib/auth/actions"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { cn } from "@/lib/utils"
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -16,7 +17,9 @@ import {
 
 // Menú de usuario con avatar de Google y botón de cerrar sesión.
 // El logout sigue siendo un Server Action invocado desde un <form>.
-export default function UserMenu({ user }) {
+// `className` permite adaptar el trigger al lugar donde se monta (header
+// angosto vs. fila de ancho completo al pie del sidebar).
+export default function UserMenu({ user, className }) {
   const meta = user.user_metadata || {}
   const name = meta.full_name || meta.name || user.email
   const avatar = meta.avatar_url || meta.picture
@@ -24,7 +27,7 @@ export default function UserMenu({ user }) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" className="gap-2 px-2" />}>
+      <DropdownMenuTrigger render={<Button variant="ghost" className={cn("gap-2 px-2", className)} />}>
         <Avatar size="sm">
           <AvatarImage src={avatar} alt={name} referrerPolicy="no-referrer" />
           <AvatarFallback>{initial}</AvatarFallback>
