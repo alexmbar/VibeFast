@@ -4,14 +4,24 @@ import { useEffect, useState } from 'react'
 import { Loader2, Wallet, Calculator, CalendarDays, TrendingUp, Scale } from 'lucide-react'
 import { listarGastos } from '@/lib/gastos/client'
 import { listarIngresos, obtenerBalanceNeto } from '@/lib/ingresos/client'
+import { listarBancos } from '@/lib/bancos/client'
+import { obtenerGastosPorCorte } from '@/lib/reportes/client'
 import { formatMonto } from '@/lib/gastos/schema'
 import GastoMensualChart from '@/components/reportes/GastoMensualChart'
 import CategoriaChart from '@/components/reportes/CategoriaChart'
 import TendenciaChart from '@/components/reportes/TendenciaChart'
+import GastosPorCorteTable from '@/components/reportes/GastosPorCorteTable'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export default function ReportesPage() {
   const [gastos, setGastos] = useState([])
@@ -22,6 +32,31 @@ export default function ReportesPage() {
     desde: '',
     hasta: '',
   })
+
+  // Ver por: '' = mes calendario (todas las cuentas), o el id de una
+  // tarjeta de credito para ver por su ciclo de corte en vez de mes.
+  const [bancosCredito, setBancosCredito] = useState([])
+  const [vistaBancoId, setVistaBancoId] = useState('')
+  const [ciclosCorte, setCiclosCorte] = useState([])
+  const [isLoadingCorte, setIsLoadingCorte] = useState(false)
+
+  useEffect(() => {
+    listarBancos({ tipo: 'credito', activo: true })
+      .then(data => setBancosCredito(data.filter(b => b.dia_corte)))
+      .catch(error => console.error('Error loading bancos:', error))
+  }, [])
+
+  useEffect(() => {
+    if (!vistaBancoId) {
+      setCiclosCorte([])
+      return
+    }
+    setIsLoadingCorte(true)
+    obtenerGastosPorCorte(vistaBancoId, 12)
+      .then(setCiclosCorte)
+      .catch(error => console.error('Error loading gastos por corte:', error))
+      .finally(() => setIsLoadingCorte(false))
+  }, [vistaBancoId])
 
   async function loadDatos() {
     setIsLoading(true)
@@ -117,7 +152,7 @@ export default function ReportesPage() {
     )
   }
 
-  if (gastos.length === 0 && ingresos.length === 0) {
+  if (gastos.length === 0 && ingresos.length === 0 && bancosCredito.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-lg text-muted-foreground">No hay gastos ni ingresos para mostrar</p>
@@ -131,6 +166,54 @@ export default function ReportesPage() {
       {/* Header */}
       <h1 className="text-2xl font-bold tracking-tight">Reportes</h1>
 
+      {/* Ver por: mes calendario (todas las cuentas) o ciclo de corte de una tarjeta */}
+      {bancosCredito.length > 0 && (
+        <Card>
+          <CardContent>
+            <div className="space-y-1.5 max-w-sm">
+              <Label htmlFor="vista-banco" className="text-sm">Ver por</Label>
+              <Select
+                value={vistaBancoId}
+                onValueChange={setVistaBancoId}
+                items={{
+                  '': 'Mes calendario (todas las cuentas)',
+                  ...Object.fromEntries(
+                    bancosCredito.map(b => [String(b.id), b.alias ? `${b.nombre} (${b.alias})` : b.nombre])
+                  ),
+                }}
+              >
+                <SelectTrigger id="vista-banco" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Mes calendario (todas las cuentas)</SelectItem>
+                  {[...bancosCredito]
+                    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+                    .map(banco => (
+                      <SelectItem key={banco.id} value={String(banco.id)}>
+                        {banco.alias ? `${banco.nombre} (${banco.alias})` : banco.nombre}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {vistaBancoId && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Gasto por ciclo de corte</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <GastosPorCorteTable ciclos={ciclosCorte} isLoading={isLoadingCorte} />
+          </CardContent>
+        </Card>
+      )}
+
+      {!vistaBancoId && (
+      <>
       {/* Filtros */}
       <Card>
         <CardContent>
@@ -257,6 +340,8 @@ export default function ReportesPage() {
       <div className="w-full">
         <TendenciaChart data={dataTendencia} dataSecundaria={dataTendenciaIngreso} />
       </div>
+      </>
+      )}
     </div>
   )
 }

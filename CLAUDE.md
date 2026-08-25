@@ -305,13 +305,19 @@ por Kapso) sí lo permite sin ese trámite.
   dato fijo del banco — encaja mejor con la carga de estados de cuenta
   (ítem de RAG/chatbot arriba). Esto destapa dos features aparte,
   pendientes:
-  - **Reportes por periodo de corte**: agrupar `/reportes` por
-    `[corte_anterior, corte_actual)` usando `dia_corte` en vez de mes
-    calendario. Los reportes actuales agrupan en JS client-side sobre
-    hasta 1000 filas (`reportes/page.js`) — el patrón correcto del
-    proyecto para un total confiable es una función SQL tipo
-    `balance_neto(p_desde, p_hasta)` (`020_balance_neto_function.sql`),
-    no extender ese agrupamiento JS.
+  - ~~**Reportes por periodo de corte**~~ — resuelto el 2026-08-25:
+    selector "Ver por" en `/reportes` (solo visible si el usuario tiene
+    tarjetas de crédito con `dia_corte` configurado); al elegir una
+    tarjeta, la vista cambia de mes calendario a sus ciclos de corte
+    (últimos 12, incluyendo el ciclo en curso). Los totales se calculan
+    en la función SQL `gastos_por_corte(p_banco_id, p_ciclos)`
+    (`035_gastos_por_corte_function.sql`), mismo patrón que
+    `balance_neto` — nunca sumando en JS sobre una lista paginada.
+    Cuentan todos los gastos con ese `banco_id` (sin importar
+    `tipo_pago`). Ciclo = `[periodo_inicio, periodo_fin)` usando las
+    fechas de corte consecutivas, clampadas al último día del mes si es
+    más corto (igual que `resolverDiaMes` en `lib/recurrencias/fechas.js`).
+    Componente: `web/components/reportes/GastosPorCorteTable.js`.
   - ~~**Recordatorio de pago por WhatsApp**~~ — resuelto el 2026-08-25:
     cron nuevo `web/app/api/cron/recordatorio-pago-credito/route.js`
     (`0 9 * * *` en `web/vercel.json`), manda el template pre-aprobado
