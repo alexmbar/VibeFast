@@ -362,8 +362,8 @@ por Kapso) sí lo permite sin ese trámite.
 
 - Presupuestos: límite mensual por categoría (y quizá global), con
   comparación gasto real vs. presupuestado y aviso al acercarse o pasarse
-  del límite (¿por WhatsApp, como los recordatorios de pago de crédito
-  pendientes arriba?).
+  del límite (¿por WhatsApp, con un template pre-aprobado igual que el
+  recordatorio de pago de crédito arriba?).
 
 - Presupuestos predictivos: en vez de que el usuario capture el límite a
   mano, sugerirlo/ajustarlo con base en el historial de gastos por
