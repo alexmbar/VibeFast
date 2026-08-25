@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js"
+import { sendCronErrorAlert } from "@/lib/resend/send"
 
 // Cliente con service_role: ignora RLS. Solo se usa desde route
 // handlers de /api/admin, nunca desde el cliente ni desde codigo que
@@ -9,6 +10,23 @@ export function createAdminClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
+}
+
+// Consulta los profiles.role='admin' y les manda un correo cuando un cron
+// termina con errores. Best-effort: nunca tumba el cron si Resend no esta
+// configurado o falla el envio. Usado por los crons en web/app/api/cron/*.
+export async function alertarAdminsPorErroresCron(supabase, cronNombre, errores) {
+  if (!errores || errores.length === 0) return
+
+  const { data: admins } = await supabase.from("profiles").select("email").eq("role", "admin")
+  const emails = (admins || []).map(a => a.email).filter(Boolean)
+  if (emails.length === 0) return
+
+  try {
+    await sendCronErrorAlert(emails, cronNombre, errores)
+  } catch (err) {
+    console.error(`[cron/${cronNombre}] error mandando alerta a admins:`, err.message)
+  }
 }
 
 // entidadId siempre como texto: admin_audit_log no tiene una sola FK

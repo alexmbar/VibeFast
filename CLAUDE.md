@@ -312,28 +312,20 @@ por Kapso) sí lo permite sin ese trámite.
     proyecto para un total confiable es una función SQL tipo
     `balance_neto(p_desde, p_hasta)` (`020_balance_neto_function.sql`),
     no extender ese agrupamiento JS.
-  - **Recordatorio de pago por WhatsApp** (N días antes de
-    `dia_limite_pago`, cron nuevo tipo `generar-recurrencias`): **no se
-    puede mandar como mensaje de texto libre.** WhatsApp Business
-    Platform solo permite `type: "text"` dentro de la ventana de 24h
-    desde el último mensaje del usuario; un recordatorio proactivo casi
-    siempre cae fuera de esa ventana. Hace falta un **template**
-    pre-aprobado por Meta (`type: "template"`, mismo endpoint
-    `POST /meta/whatsapp/v24.0/{phone_number_id}/messages` que ya usa
-    `enviarMensajeWhatsApp()`, ver
-    [docs de Kapso](https://docs.kapso.ai/api/meta/whatsapp/messages/send-a-message)):
-    1. ~~Dar de alta el template en Kapso/Meta~~ — hecho: template
-       `recordatorio_pago_credito` (categoría `UTILITY`, `es_MX`,
-       `parameter_format: "NAMED"`, params `nombre_banco`, `fecha_limite`,
-       `dias_restantes`) creado y enviado a revisión de Meta el
-       2026-08-19.
-    2. ~~Esperar aprobación de Meta~~ — hecho: estado `Approved` en el
-       dashboard de Kapso, confirmado el 2026-08-24.
-    3. Agregar `enviarPlantillaWhatsApp(to, templateName, params)` en
-       `kapso.js` (manda `type: "template"` en vez de `type: "text"`) y
-       usarla en el cron nuevo en vez de `enviarMensajeWhatsApp()`. Ya
-       desbloqueado — pendiente de implementar.
-    - ~~Mismo problema ya existe hoy en `notificarUsuarios()`~~ —
+  - ~~**Recordatorio de pago por WhatsApp**~~ — resuelto el 2026-08-25:
+    cron nuevo `web/app/api/cron/recordatorio-pago-credito/route.js`
+    (`0 9 * * *` en `web/vercel.json`), manda el template pre-aprobado
+    `recordatorio_pago_credito` (`type: "template"`, no texto libre, para
+    no chocar con la ventana de 24h de WhatsApp) vía
+    `enviarPlantillaWhatsApp(to, templateName, params)` en `kapso.js`.
+    Corre `DIAS_ANTES = 3` días antes de `dia_limite_pago` por cada banco
+    `tipo = credito` activo; usa `bancos.ultimo_recordatorio_pago`
+    (`034_bancos_ultimo_recordatorio_pago.sql`) para no reenviarlo si el
+    cron corre dos veces el mismo ciclo. Errores del cron se alertan a
+    `profiles.role = 'admin'` por correo con el mismo helper que usa
+    `generar-recurrencias` (`alertarAdminsPorErroresCron` en
+    `lib/admin/db.js`).
+    - ~~Mismo problema ya existía hoy en `notificarUsuarios()`~~ —
       confirmado y resuelto el 2026-08-24, ver arriba ("Alertar cuando el
       cron de recurrencias falla").
 

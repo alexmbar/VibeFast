@@ -3,8 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { ocurrenciasEnRango, siguienteDia } from '@/lib/recurrencias/fechas'
 import { categoriaLabelsDe } from '@/lib/recurrencias/schema'
 import { enviarMensajeWhatsApp } from '@/lib/whatsapp/kapso'
-import { registrarIntegracion } from '@/lib/admin/db'
-import { sendCronErrorAlert } from '@/lib/resend/send'
+import { registrarIntegracion, alertarAdminsPorErroresCron } from '@/lib/admin/db'
 
 const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 
@@ -140,34 +139,13 @@ export async function GET(request) {
 
   await notificarUsuarios(supabase, generadasPorUsuario)
 
-  if (errores.length > 0) {
-    await alertarAdmins(supabase, errores)
-  }
+  await alertarAdminsPorErroresCron(supabase, 'generar-recurrencias', errores)
 
   return NextResponse.json({
     reglas_procesadas: reglas?.length || 0,
     filas_generadas: filasGeneradas,
     errores,
   })
-}
-
-// Alerta interna por correo cuando el cron termino con errores (reglas que
-// tronaron al insertar, o notificaciones de WhatsApp que fallaron). Best
-// effort: si Resend no esta configurado o falla el envio, no tumba el cron.
-async function alertarAdmins(supabase, errores) {
-  const { data: admins } = await supabase
-    .from('profiles')
-    .select('email')
-    .eq('role', 'admin')
-
-  const emails = (admins || []).map(a => a.email).filter(Boolean)
-  if (emails.length === 0) return
-
-  try {
-    await sendCronErrorAlert(emails, 'generar-recurrencias', errores)
-  } catch (err) {
-    console.error('[cron/recurrencias] error mandando alerta a admins:', err)
-  }
 }
 
 // Notificacion best-effort por WhatsApp -- nunca tumba el job si falla el
