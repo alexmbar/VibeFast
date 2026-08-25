@@ -49,25 +49,41 @@
   default: false;
   prefersdark: true;
   color-scheme: dark;
-  --color-primary: #a9739c;
-  --color-primary-content: #1a1417;
-  --color-secondary: #3fbfb9;
-  --color-secondary-content: #0f1717;
-  --color-accent: #3fbfb9;
-  --color-accent-content: #0f1717;
-  --color-neutral: #e7e3e6;
-  --color-neutral-content: #1a1417;
-  --color-base-100: #1e1b1e;
-  --color-base-200: #17151a;
-  --color-base-300: #332f35;
-  --color-base-content: #edeaec;
-  --color-info: #5ba3d9;
-  --color-success: #4ade80;
-  --color-warning: #fbbf24;
-  --color-error: #f87171;
+  /* Paleta estilo Vercel: azul de marca (#0070f3) como primary/accent,
+     superficies oscurecidas hacia negro (sin llegar a #000 puro) y estados
+     (warning/error) tomados de los colores de marca de Vercel. --color-primary
+     se re-declara más abajo con !important porque config.brand.primary (ver
+     layout.js) se inyecta inline en <html> y normalmente pisa este valor; el
+     azul aquí es intencional solo en modo oscuro, el modo claro sigue la
+     marca ciruela. */
+  --color-primary: #0070f3;
+  --color-primary-content: #ffffff;
+  --color-secondary: #1a1a1a;
+  --color-secondary-content: #f3f1f3;
+  --color-accent: #0070f3;
+  --color-accent-content: #ffffff;
+  --color-neutral: #f3f1f3;
+  --color-neutral-content: #0d0c0e;
+  --color-base-100: #100f10;
+  --color-base-200: #0d0c0e;
+  --color-base-300: #1f1c20;
+  --color-base-content: #f3f1f3;
+  --color-info: #0070f3;
+  --color-success: #16a34a;
+  --color-warning: #f5a623;
+  --color-error: #ee0000;
   --radius-box: 0.75rem;
   --radius-field: 0.5rem;
   --radius-selector: 0.5rem;
+}
+
+/* config.brand.primary se inyecta inline como --color-primary en <html>
+   (layout.js) y por especificidad de inline style gana sobre cualquier regla
+   de hoja de estilos sin !important -- incluida la de este theme. Se fuerza
+   aquí porque el azul de Vercel en primary es intencional solo para el tema
+   oscuro; el modo claro sigue usando la marca (ciruela) sin cambios. */
+[data-theme="vibefast-dark"] {
+  --color-primary: #0070f3 !important;
 }
 
 html,
