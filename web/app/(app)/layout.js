@@ -31,7 +31,7 @@ export default async function AppLayout({ children }) {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <header className="sticky top-0 z-40 h-14 border-b bg-card shadow-sm">
-        <div className="mx-auto flex h-full w-full max-w-6xl items-center justify-between px-4">
+        <div className="flex h-full items-center justify-between px-4">
           <Link href="/gastos" className="flex items-center gap-2 font-bold">
             <Logo className="size-7" />
             {config.brand.logoText}
@@ -50,17 +50,21 @@ export default async function AppLayout({ children }) {
       {profile?.estado_cuenta === "suspendida" ? (
         <CuentaSuspendida />
       ) : profile?.onboarding_step === "completado" ? (
-        <div className="mx-auto flex w-full max-w-6xl flex-1 gap-6 px-4 py-6">
-          <aside className="hidden w-52 shrink-0 flex-col justify-between md:sticky md:top-[calc(3.5rem_+_1.5rem)] md:flex md:h-[calc(100vh_-_6.5rem)]">
-            <div className="min-h-0 overflow-y-auto">
+        <div className="flex flex-1">
+          {/* Pegado al borde izquierdo real de la ventana (fuera de cualquier
+              contenedor centrado), estilo Vercel -- no dentro de un max-w. */}
+          <aside className="hidden w-52 shrink-0 flex-col border-r bg-card md:sticky md:top-14 md:flex md:h-[calc(100vh_-_3.5rem)]">
+            <div className="min-h-0 flex-1 overflow-y-auto p-3">
               <AppNav />
             </div>
-            <div className="border-t pt-3">
+            <div className="border-t p-3">
               <UserMenu user={user} className="w-full justify-start" />
             </div>
           </aside>
 
-          <main className="min-w-0 flex-1">{children}</main>
+          <div className="min-w-0 flex-1">
+            <main className="mx-auto w-full max-w-6xl px-4 py-6">{children}</main>
+          </div>
         </div>
       ) : (
         <OnboardingWizard userId={user.id} onboardingStep={profile?.onboarding_step || "telefono"} />
