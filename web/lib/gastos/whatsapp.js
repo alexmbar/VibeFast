@@ -142,7 +142,7 @@ export async function crearGastoDesdeWhatsApp(
 // (ver crearGastoDesdeWhatsApp, se descarga una sola vez y se reusa
 // para la subida a Drive).
 async function parsearMediaConOpenAI(supabase, userId, buffer, mediaContentType) {
-  const modelo = 'gpt-4-vision-preview'
+  const modelo = 'gpt-4o-mini'
   try {
     const base64 = Buffer.from(buffer).toString('base64')
 
