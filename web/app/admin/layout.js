@@ -25,7 +25,7 @@ export default async function AdminLayout({ children }) {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b bg-card shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
           <Link href="/admin" className="flex items-center gap-2 font-bold">
             <Logo className="size-7" />
             Admin
