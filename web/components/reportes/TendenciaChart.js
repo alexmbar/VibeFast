@@ -3,9 +3,9 @@
 import { VChart } from '@visactor/react-vchart'
 import { Card, CardHeader, CardTitle, CardAction, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { formatMonto } from '@/lib/gastos/schema'
 import { CHART_COLORS } from '@/lib/theme/chartColors'
 import { useAppTheme } from '@/components/layout/AppTheme'
+import { useUserConfig } from '@/lib/config/UserConfigContext'
 
 const SUFIJO_PROYECTADO = ' (proyectado)'
 
@@ -35,6 +35,7 @@ export default function TendenciaChart({
   onRangoChange,
 }) {
   const { isDark } = useAppTheme()
+  const { formatMonto } = useUserConfig()
   const esMultiSerie = !!dataSecundaria
 
   // Cada definición se filtra si no trae datos, para que el índice de

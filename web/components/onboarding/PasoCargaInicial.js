@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Wallet, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
-import { formatMonto } from "@/lib/gastos/schema"
+import { useUserConfig } from "@/lib/config/UserConfigContext"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
@@ -19,6 +19,7 @@ const INTERVALO_POLLING_MS = 3000
 export default function PasoCargaInicial({ userId }) {
   const router = useRouter()
   const supabase = createClient()
+  const { formatMonto } = useUserConfig()
   const [cargaInicial, setCargaInicial] = useState(null)
   const [avanzando, setAvanzando] = useState(false)
 

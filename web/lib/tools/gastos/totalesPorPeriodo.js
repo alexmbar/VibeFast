@@ -1,4 +1,4 @@
-import { fetchGastos } from "./helpers.js"
+import { fetchGastos, getAuthedSupabase } from "./helpers.js"
 import { formatMonto } from "@/lib/gastos/schema.js"
 
 // Tool de solo lectura: suma gastos del usuario agrupados por mes (YYYY-MM).
@@ -22,6 +22,7 @@ export const totalesPorPeriodo = {
     additionalProperties: false,
   },
   async execute({ desde, hasta } = {}) {
+    const { profile } = await getAuthedSupabase()
     const gastos = await fetchGastos({ desde, hasta })
 
     const porMes = new Map()
@@ -36,7 +37,7 @@ export const totalesPorPeriodo = {
     const meses = [...porMes.entries()]
       .map(([mes, { totalCentavos, count }]) => ({
         mes,
-        total: formatMonto(totalCentavos),
+        total: formatMonto(totalCentavos, profile?.moneda),
         totalCentavos,
         count,
       }))

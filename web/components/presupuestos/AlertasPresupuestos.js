@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { AlertTriangle, AlertCircle } from 'lucide-react'
 import { obtenerAlertasPresupuestos } from '@/lib/presupuestos/alertas'
-import { formatMonto } from '@/lib/gastos/schema'
+import { useUserConfig } from '@/lib/config/UserConfigContext'
 import { Card, CardContent } from '@/components/ui/card'
 
 const MAX_ITEMS = 5
 
 export default function AlertasPresupuestos() {
+  const { formatMonto } = useUserConfig()
   const [alertas, setAlertas] = useState(null)
 
   useEffect(() => {

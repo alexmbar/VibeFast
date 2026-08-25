@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { Pencil, Trash2, Loader2, Check } from 'lucide-react'
 import { eliminarGasto, actualizarGasto } from '@/lib/gastos/client'
-import { CATEGORIA_LABELS, TIPO_PAGO_LABELS, formatMonto, formatDate, extractHora } from '@/lib/gastos/schema'
+import { CATEGORIA_LABELS, TIPO_PAGO_LABELS, extractHora } from '@/lib/gastos/schema'
+import { useUserConfig } from '@/lib/config/UserConfigContext'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -40,6 +41,7 @@ function compararGastos(a, b, columna) {
 }
 
 export default function GastoTable({ gastos, onDelete, onUpdate, isLoading }) {
+  const { formatMonto, formatFecha } = useUserConfig()
   const [deleting, setDeleting] = useState(null)
   const [confirming, setConfirming] = useState(null)
   const [sortBy, setSortBy] = useState('fecha')
@@ -132,7 +134,7 @@ export default function GastoTable({ gastos, onDelete, onUpdate, isLoading }) {
         {gastosOrdenados.map(gasto => (
           <TableRow key={gasto.id}>
             <TableCell className="font-mono text-sm">
-              <div>{formatDate(gasto.fecha)}</div>
+              <div>{formatFecha(gasto.fecha)}</div>
               <div className="text-xs text-muted-foreground">{extractHora(gasto.created_at)}</div>
             </TableCell>
             <TableCell className="text-sm">{gasto.tienda || '-'}</TableCell>

@@ -5,6 +5,8 @@ import { subirTicketADrive } from '@/lib/google-drive/client'
 import { registrarIntegracion, registrarUsoOpenai } from '@/lib/admin/db'
 import { costoChatCentavos } from '@/lib/admin/costos'
 import { verificarPresupuesto } from '@/lib/presupuestos/verificar'
+import { hoyEnZona } from '@/lib/config/fechas'
+import { ZONA_HORARIA_DEFAULT } from '@/lib/config/schema'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -24,6 +26,8 @@ export async function crearGastoDesdeWhatsApp(
   opciones = {}
 ) {
   try {
+    const zonaHoraria = opciones.zonaHoraria || ZONA_HORARIA_DEFAULT
+
     let gasto = null
     let mediaBuffer = null
 
@@ -32,9 +36,9 @@ export async function crearGastoDesdeWhatsApp(
     // a Google Drive.
     if (mediaUrl) {
       mediaBuffer = await descargarMediaKapso(mediaUrl)
-      gasto = await parsearMediaConOpenAI(supabase, userId, mediaBuffer, mediaContentType)
+      gasto = await parsearMediaConOpenAI(supabase, userId, mediaBuffer, mediaContentType, zonaHoraria)
     } else if (opciones.origenAudio && texto) {
-      gasto = await parsearTextoConOpenAI(supabase, userId, texto)
+      gasto = await parsearTextoConOpenAI(supabase, userId, texto, zonaHoraria)
     }
 
     // Si no hay media/audio o la extracción con OpenAI falló, parsear texto
@@ -59,16 +63,15 @@ export async function crearGastoDesdeWhatsApp(
     }
 
     // Validar fecha
+    const hoy = hoyEnZona(zonaHoraria)
     if (!gasto.fecha) {
-      gasto.fecha = new Date().toISOString().split('T')[0]
+      gasto.fecha = hoy
     }
 
-    // Validar que la fecha no sea en el futuro
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const selectedDate = new Date(gasto.fecha)
-    if (selectedDate > today) {
-      gasto.fecha = new Date().toISOString().split('T')[0]
+    // Validar que la fecha no sea en el futuro (comparacion de strings
+    // YYYY-MM-DD, ambos date-only, sin pasar por Date/timezone)
+    if (gasto.fecha > hoy) {
+      gasto.fecha = hoy
     }
 
     // Validar categoría
@@ -141,7 +144,7 @@ export async function crearGastoDesdeWhatsApp(
 // Parsear imagen/PDF con OpenAI Vision. `buffer` ya viene descargado
 // (ver crearGastoDesdeWhatsApp, se descarga una sola vez y se reusa
 // para la subida a Drive).
-async function parsearMediaConOpenAI(supabase, userId, buffer, mediaContentType) {
+async function parsearMediaConOpenAI(supabase, userId, buffer, mediaContentType, zonaHoraria) {
   const modelo = 'gpt-4o-mini'
   try {
     const base64 = Buffer.from(buffer).toString('base64')
@@ -167,7 +170,7 @@ async function parsearMediaConOpenAI(supabase, userId, buffer, mediaContentType)
               text: `Extrae información del gasto de esta imagen:
               - Monto (número entero en centavos, ej: 150050 = $1500.50)
               - Tienda/comercio (ej: OXXO, Starbucks)
-              - Fecha (YYYY-MM-DD, si no aparece usa hoy)
+              - Fecha (YYYY-MM-DD, si no aparece usa hoy: ${hoyEnZona(zonaHoraria)})
               - Categoría (supermercado, restaurantes, cafeteria, transporte, gasolina, salud, farmacia, hogar, servicios, renta, educacion, entretenimiento, ropa, tecnologia, viajes, mascotas, regalos, impuestos, comisiones, otros)
               - Tipo de pago (efectivo, debito, credito, transferencia, domiciliado, vales, otro)
 
@@ -214,7 +217,7 @@ async function parsearMediaConOpenAI(supabase, userId, buffer, mediaContentType)
 // Extrae los datos del gasto de una transcripción de audio con OpenAI. A
 // diferencia de parsearTexto (regex para "500 oxxo"), esto interpreta
 // lenguaje natural dictado por voz.
-async function parsearTextoConOpenAI(supabase, userId, texto) {
+async function parsearTextoConOpenAI(supabase, userId, texto, zonaHoraria) {
   const modelo = 'gpt-4o-mini'
   try {
     const result = await openai.chat.completions.create({
@@ -226,7 +229,7 @@ async function parsearTextoConOpenAI(supabase, userId, texto) {
 
               - Monto (número entero en centavos, ej: 150050 = $1500.50)
               - Tienda/comercio (ej: OXXO, Starbucks), o null si no se menciona
-              - Fecha (YYYY-MM-DD, si no aparece usa hoy: ${new Date().toISOString().split('T')[0]})
+              - Fecha (YYYY-MM-DD, si no aparece usa hoy: ${hoyEnZona(zonaHoraria)})
               - Categoría (supermercado, restaurantes, cafeteria, transporte, gasolina, salud, farmacia, hogar, servicios, renta, educacion, entretenimiento, ropa, tecnologia, viajes, mascotas, regalos, impuestos, comisiones, otros)
               - Tipo de pago (efectivo, debito, credito, transferencia, domiciliado, vales, otro; si no se menciona usa efectivo)
 

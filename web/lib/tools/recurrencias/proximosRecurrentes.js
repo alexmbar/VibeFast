@@ -2,13 +2,10 @@ import { getAuthedSupabase } from "../gastos/helpers.js"
 import { ocurrenciasEnRango } from "@/lib/recurrencias/fechas.js"
 import { categoriaLabelsDe } from "@/lib/recurrencias/schema.js"
 import { formatMonto } from "@/lib/gastos/schema.js"
+import { hoyEnZona } from "@/lib/config/fechas.js"
+import { ZONA_HORARIA_DEFAULT } from "@/lib/config/schema.js"
 
-const TIMEZONE = "America/Mexico_City"
 const DIAS_VENTANA_DEFAULT = 30
-
-function getFechaHoy() {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: TIMEZONE }).format(new Date())
-}
 
 function addDias(fechaISO, dias) {
   const [anio, mes, dia] = fechaISO.split("-").map(Number)
@@ -32,7 +29,7 @@ export const proximosRecurrentes = {
     properties: {
       desde: {
         type: "string",
-        description: `Fecha inicial YYYY-MM-DD (inclusive). Si se omite, usa hoy (${TIMEZONE}).`,
+        description: "Fecha inicial YYYY-MM-DD (inclusive). Si se omite, usa hoy en la zona horaria configurada del usuario.",
       },
       hasta: {
         type: "string",
@@ -48,9 +45,9 @@ export const proximosRecurrentes = {
     additionalProperties: false,
   },
   async execute({ desde, hasta, tipo } = {}) {
-    const { supabase, user } = await getAuthedSupabase()
+    const { supabase, user, profile } = await getAuthedSupabase()
 
-    const rangoDesde = desde || getFechaHoy()
+    const rangoDesde = desde || hoyEnZona(profile?.zona_horaria || ZONA_HORARIA_DEFAULT)
     const rangoHasta = hasta || addDias(rangoDesde, DIAS_VENTANA_DEFAULT)
 
     let query = supabase
@@ -80,7 +77,7 @@ export const proximosRecurrentes = {
           fecha,
           tipo: regla.tipo,
           categoria: labels[regla.categoria] || regla.categoria,
-          monto: formatMonto(regla.monto_default),
+          monto: formatMonto(regla.monto_default, profile?.moneda),
           montoCentavos: regla.monto_default,
           tienda: regla.tipo === "gasto" ? regla.tienda : null,
         })
@@ -97,8 +94,8 @@ export const proximosRecurrentes = {
       hasta: rangoHasta,
       proyeccion: true,
       nota: "Estos montos son proyecciones basadas en reglas de recurrencia activas (monto_default), no montos confirmados por el usuario.",
-      totalIngresosProyectados: formatMonto(totalesPorTipo.ingreso),
-      totalGastosProyectados: formatMonto(totalesPorTipo.gasto),
+      totalIngresosProyectados: formatMonto(totalesPorTipo.ingreso, profile?.moneda),
+      totalGastosProyectados: formatMonto(totalesPorTipo.gasto, profile?.moneda),
       ocurrencias,
     }
   },

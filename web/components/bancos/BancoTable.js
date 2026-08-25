@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { Pencil, Loader2 } from 'lucide-react'
 import { actualizarBanco } from '@/lib/bancos/client'
 import { TIPO_BANCO_LABELS } from '@/lib/bancos/schema'
-import { formatMonto } from '@/lib/gastos/schema'
+import { useUserConfig } from '@/lib/config/UserConfigContext'
 import { useSortableTable } from '@/lib/hooks/useSortableTable'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -42,6 +42,7 @@ function compararBancos(a, b, columna) {
 }
 
 export default function BancoTable({ bancos, onToggleActivo, isLoading }) {
+  const { formatMonto } = useUserConfig()
   const [toggling, setToggling] = useState(null)
   const { sorted, sortBy, sortDir, handleSort } = useSortableTable(bancos, compararBancos, {
     defaultSortBy: 'nombre',

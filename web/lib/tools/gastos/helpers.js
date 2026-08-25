@@ -8,13 +8,22 @@
 
 import { createClient } from "@/lib/supabase/server"
 
+// Ademas de `user`, resuelve el `profile` (zona_horaria, moneda) de la
+// misma sesion: las tools que formatean montos o calculan "hoy" lo
+// necesitan para respetar la configuracion del usuario en vez de asumir
+// MXN/America/Mexico_City.
 export async function getAuthedSupabase() {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) throw new Error("No autenticado")
-  return { supabase, user }
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("zona_horaria, moneda")
+    .eq("id", user.id)
+    .single()
+  return { supabase, user, profile }
 }
 
 // Trae gastos del usuario filtrados por rango de fecha / categoria /

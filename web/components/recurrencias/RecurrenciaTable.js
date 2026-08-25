@@ -10,7 +10,7 @@ import {
   DIA_SEMANA_LABELS,
   categoriaLabelsDe,
 } from '@/lib/recurrencias/schema'
-import { formatMonto } from '@/lib/gastos/schema'
+import { useUserConfig } from '@/lib/config/UserConfigContext'
 import { useSortableTable } from '@/lib/hooks/useSortableTable'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -60,6 +60,7 @@ function detalleFrecuencia(regla) {
 }
 
 export default function RecurrenciaTable({ recurrencias, onChange, isLoading }) {
+  const { formatMonto } = useUserConfig()
   const [deleting, setDeleting] = useState(null)
   const [toggling, setToggling] = useState(null)
   const { sorted, sortBy, sortDir, handleSort } = useSortableTable(recurrencias, compararRecurrencias, {

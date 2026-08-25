@@ -5,22 +5,9 @@ import { categoriaLabelsDe } from '@/lib/recurrencias/schema'
 import { enviarMensajeWhatsApp } from '@/lib/whatsapp/kapso'
 import { registrarIntegracion, alertarAdminsPorErroresCron } from '@/lib/admin/db'
 import { verificarPresupuesto } from '@/lib/presupuestos/verificar'
-
-const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
-
-// "Hoy" en America/Mexico_City, nunca new Date() a secas: la funcion de
-// Vercel corre en UTC y este proyecto ya tuvo bugs de fechas corridas por
-// este motivo (ver regla 2 de "Reglas de esquema" en CLAUDE.md).
-function hoyMexico() {
-  const partes = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Mexico_City',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date())
-  const valores = Object.fromEntries(partes.map(p => [p.type, p.value]))
-  return `${valores.year}-${valores.month}-${valores.day}`
-}
+import { formatMonto } from '@/lib/gastos/schema'
+import { hoyEnZona } from '@/lib/config/fechas'
+import { ZONA_HORARIA_DEFAULT } from '@/lib/config/schema'
 
 // Genera, por adelantado, las filas de gastos/ingresos que corresponden a
 // cada regla de recurrencia activa hasta el dia de hoy (con catch-up si el
@@ -37,19 +24,31 @@ export async function GET(request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
-  const hoy = hoyMexico()
+  // Cota superior amplia para el prefiltro SQL -- el filtrado preciso por
+  // usuario ocurre mas abajo con el "hoy" resuelto en la zona horaria de
+  // cada quien.
+  const hoyPrefiltro = hoyEnZona(ZONA_HORARIA_DEFAULT)
 
   const { data: reglas, error } = await supabase
     .from('recurrencias')
     .select('*')
     .eq('activo', true)
-    .lte('fecha_inicio', hoy)
-    .or(`fecha_fin.is.null,fecha_fin.gte.${hoy}`)
+    .lte('fecha_inicio', hoyPrefiltro)
+    .or(`fecha_fin.is.null,fecha_fin.gte.${hoyPrefiltro}`)
 
   if (error) {
     console.error('[cron/recurrencias] error al listar reglas:', error)
     return NextResponse.json({ message: 'Error al listar recurrencias' }, { status: 500 })
   }
+
+  // "Hoy" depende de la zona horaria de cada usuario -- se resuelve una
+  // vez por usuario dentro del loop, nunca globalmente (ver regla 2 de
+  // "Reglas de esquema" en CLAUDE.md: nunca new Date() a secas).
+  const userIds = [...new Set((reglas || []).map(r => r.user_id))]
+  const { data: perfilesZona } = userIds.length
+    ? await supabase.from('profiles').select('id, zona_horaria').in('id', userIds)
+    : { data: [] }
+  const zonaPorUsuario = new Map((perfilesZona || []).map(p => [p.id, p.zona_horaria]))
 
   let filasGeneradas = 0
   const errores = []
@@ -57,6 +56,7 @@ export async function GET(request) {
 
   for (const regla of reglas || []) {
     try {
+      const hoy = hoyEnZona(zonaPorUsuario.get(regla.user_id) || ZONA_HORARIA_DEFAULT)
       const desde = regla.ultima_generacion ? siguienteDia(regla.ultima_generacion) : regla.fecha_inicio
       const fechas = ocurrenciasEnRango(regla, desde, hoy)
       const tabla = regla.tipo === 'gasto' ? 'gastos' : 'ingresos'
@@ -161,7 +161,7 @@ async function notificarUsuarios(supabase, generadasPorUsuario) {
   const userIds = [...generadasPorUsuario.keys()]
   const { data: perfiles } = await supabase
     .from('profiles')
-    .select('id, phone')
+    .select('id, phone, moneda')
     .in('id', userIds)
 
   for (const perfil of perfiles || []) {
@@ -171,7 +171,7 @@ async function notificarUsuarios(supabase, generadasPorUsuario) {
 
     try {
       const detalle = pendientes
-        .map(p => `${formatoMoneda.format(p.monto / 100)} (${categoriaLabelsDe(p.tipo)[p.categoria]})`)
+        .map(p => `${formatMonto(p.monto, perfil.moneda)} (${categoriaLabelsDe(p.tipo)[p.categoria]})`)
         .join(', ')
       const plural = pendientes.length === 1 ? 'movimiento recurrente' : 'movimientos recurrentes'
       await enviarMensajeWhatsApp(

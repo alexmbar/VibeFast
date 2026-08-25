@@ -1,5 +1,8 @@
 // Parseo y creacion de retiros desde WhatsApp (solo texto, ej. "retiro 2000 bbva")
 
+import { hoyEnZona } from '@/lib/config/fechas'
+import { ZONA_HORARIA_DEFAULT } from '@/lib/config/schema'
+
 const REGEX_MONTO = /[\$]?\s*(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)\s*(.+)?/i
 
 // Extrae monto y el texto de banco de un mensaje de retiro.
@@ -77,7 +80,7 @@ export async function matchBanco(supabase, userId, textoBanco) {
 }
 
 // Crear retiro desde mensaje de WhatsApp
-export async function crearRetiroDesdeWhatsApp(supabase, userId, texto) {
+export async function crearRetiroDesdeWhatsApp(supabase, userId, texto, zonaHoraria = ZONA_HORARIA_DEFAULT) {
   try {
     const { monto, bancoTexto } = parsearRetiro(texto)
 
@@ -104,7 +107,7 @@ export async function crearRetiroDesdeWhatsApp(supabase, userId, texto) {
       }
     }
 
-    const fecha = new Date().toISOString().split('T')[0]
+    const fecha = hoyEnZona(zonaHoraria)
 
     const { data, error } = await supabase
       .from('retiros')
@@ -144,7 +147,7 @@ export async function crearRetiroDesdeWhatsApp(supabase, userId, texto) {
 // retiro sin banco (es_carga_inicial=true, ver 024_onboarding_wizard.sql):
 // mientras el usuario no confirme el monto en el wizard, puede corregirlo
 // reenviando otro mensaje -- por eso hace upsert manual en vez de insert.
-export async function crearCargaInicialDesdeWhatsApp(supabase, userId, texto) {
+export async function crearCargaInicialDesdeWhatsApp(supabase, userId, texto, zonaHoraria = ZONA_HORARIA_DEFAULT) {
   try {
     const monto = extraerMonto(texto)
 
@@ -155,7 +158,7 @@ export async function crearCargaInicialDesdeWhatsApp(supabase, userId, texto) {
       }
     }
 
-    const fecha = new Date().toISOString().split('T')[0]
+    const fecha = hoyEnZona(zonaHoraria)
 
     const { data: existente } = await supabase
       .from('retiros')

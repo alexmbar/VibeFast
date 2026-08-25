@@ -1,4 +1,4 @@
-import { fetchGastos } from "./helpers.js"
+import { fetchGastos, getAuthedSupabase } from "./helpers.js"
 import { formatMonto } from "@/lib/gastos/schema.js"
 
 // Tool de solo lectura: suma gastos del usuario agrupados por tienda.
@@ -26,6 +26,7 @@ export const topTiendas = {
     additionalProperties: false,
   },
   async execute({ desde, hasta, limite = 10 } = {}) {
+    const { profile } = await getAuthedSupabase()
     const gastos = await fetchGastos({ desde, hasta })
 
     const porTienda = new Map()
@@ -40,7 +41,7 @@ export const topTiendas = {
     const tiendas = [...porTienda.entries()]
       .map(([tienda, { totalCentavos, count }]) => ({
         tienda,
-        total: formatMonto(totalCentavos),
+        total: formatMonto(totalCentavos, profile?.moneda),
         totalCentavos,
         count,
       }))

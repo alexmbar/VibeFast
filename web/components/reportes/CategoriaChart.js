@@ -2,12 +2,14 @@
 
 import { VChart } from '@visactor/react-vchart'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { CATEGORIA_LABELS, formatMonto } from '@/lib/gastos/schema'
+import { CATEGORIA_LABELS } from '@/lib/gastos/schema'
 import { CHART_COLORS } from '@/lib/theme/chartColors'
 import { useAppTheme } from '@/components/layout/AppTheme'
+import { useUserConfig } from '@/lib/config/UserConfigContext'
 
 export default function CategoriaChart({ data }) {
   const { isDark } = useAppTheme()
+  const { formatMonto } = useUserConfig()
   const totalCentavos = data.reduce((sum, item) => sum + item.total, 0)
 
   const chartData = data.map((item) => ({

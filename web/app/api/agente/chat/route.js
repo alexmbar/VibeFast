@@ -28,6 +28,12 @@ export async function POST(request) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 })
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("zona_horaria")
+    .eq("id", user.id)
+    .single()
+
   let body
   try {
     body = await request.json()
@@ -45,7 +51,13 @@ export async function POST(request) {
   }
 
   const encoder = new TextEncoder()
-  const events = runGastosAgent({ messages, conversationId, userId: user.id, supabase })
+  const events = runGastosAgent({
+    messages,
+    conversationId,
+    userId: user.id,
+    supabase,
+    zonaHoraria: profile?.zona_horaria,
+  })
 
   const stream = new ReadableStream({
     async start(controller) {

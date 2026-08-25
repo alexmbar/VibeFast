@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { Pencil, Trash2, Loader2, Check } from 'lucide-react'
 import { eliminarIngreso, actualizarIngreso } from '@/lib/ingresos/client'
 import { CATEGORIA_LABELS } from '@/lib/ingresos/schema'
-import { formatMonto, formatDate } from '@/lib/gastos/schema'
+import { useUserConfig } from '@/lib/config/UserConfigContext'
 import { useSortableTable } from '@/lib/hooks/useSortableTable'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -38,6 +38,7 @@ function compararIngresos(a, b, columna) {
 }
 
 export default function IngresoTable({ ingresos, onDelete, onUpdate, isLoading }) {
+  const { formatMonto, formatFecha } = useUserConfig()
   const [deleting, setDeleting] = useState(null)
   const [confirming, setConfirming] = useState(null)
   const { sorted, sortBy, sortDir, handleSort } = useSortableTable(ingresos, compararIngresos)
@@ -112,7 +113,7 @@ export default function IngresoTable({ ingresos, onDelete, onUpdate, isLoading }
       <TableBody>
         {sorted.map(ingreso => (
           <TableRow key={ingreso.id}>
-            <TableCell className="font-mono text-sm">{formatDate(ingreso.fecha)}</TableCell>
+            <TableCell className="font-mono text-sm">{formatFecha(ingreso.fecha)}</TableCell>
             <TableCell className="text-sm">{CATEGORIA_LABELS[ingreso.categoria]}</TableCell>
             <TableCell className="text-right">
               <div className="flex flex-col items-end gap-1">

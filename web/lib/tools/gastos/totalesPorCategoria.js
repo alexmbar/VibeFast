@@ -1,4 +1,4 @@
-import { fetchGastos } from "./helpers.js"
+import { fetchGastos, getAuthedSupabase } from "./helpers.js"
 import { CATEGORIA_LABELS, formatMonto } from "@/lib/gastos/schema.js"
 
 // Tool de solo lectura: suma gastos del usuario agrupados por categoría.
@@ -22,6 +22,7 @@ export const totalesPorCategoria = {
     additionalProperties: false,
   },
   async execute({ desde, hasta } = {}) {
+    const { profile } = await getAuthedSupabase()
     const gastos = await fetchGastos({ desde, hasta })
 
     const porCategoria = new Map()
@@ -36,7 +37,7 @@ export const totalesPorCategoria = {
       .map(([categoria, { totalCentavos, count }]) => ({
         categoria,
         label: CATEGORIA_LABELS[categoria] || categoria,
-        total: formatMonto(totalCentavos),
+        total: formatMonto(totalCentavos, profile?.moneda),
         totalCentavos,
         count,
       }))

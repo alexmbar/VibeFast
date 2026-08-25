@@ -5,11 +5,7 @@ import { crearRetiroDesdeWhatsApp, crearCargaInicialDesdeWhatsApp } from '@/lib/
 import { verificarFirmaKapso, enviarMensajeWhatsApp } from '@/lib/whatsapp/kapso'
 import { transcribirAudioWhatsApp } from '@/lib/whatsapp/audio'
 import { createAdminClient, registrarIntegracion } from '@/lib/admin/db'
-
-const formatoMoneda = new Intl.NumberFormat('es-MX', {
-  style: 'currency',
-  currency: 'MXN',
-})
+import { formatMonto } from '@/lib/gastos/schema'
 
 export async function POST(request) {
   try {
@@ -44,7 +40,7 @@ export async function POST(request) {
     )
     const { data: user } = await supabase
       .from('profiles')
-      .select('id, full_name, whatsapp_confirmado_at, onboarding_step')
+      .select('id, full_name, whatsapp_confirmado_at, onboarding_step, zona_horaria, moneda')
       .eq('phone', userPhone)
       .single()
 
@@ -79,8 +75,8 @@ export async function POST(request) {
     // que tiene contado (sin prefijo ni banco), no como gasto/retiro normal.
     // El wizard avanza el paso cuando el usuario confirma el monto en la UI.
     if (user.onboarding_step === 'carga_inicial') {
-      const resultado = await crearCargaInicialDesdeWhatsApp(supabase, user.id, body)
-      await responderCargaInicialWhatsApp(userPhone, resultado, transcripcion)
+      const resultado = await crearCargaInicialDesdeWhatsApp(supabase, user.id, body, user.zona_horaria)
+      await responderCargaInicialWhatsApp(userPhone, resultado, transcripcion, user.moneda)
       return NextResponse.json({ success: resultado.success })
     }
 
@@ -89,17 +85,17 @@ export async function POST(request) {
     const esRetiro = /^\s*retiro\b/i.test(body)
 
     const resultado = esRetiro
-      ? await crearRetiroDesdeWhatsApp(supabase, user.id, body)
+      ? await crearRetiroDesdeWhatsApp(supabase, user.id, body, user.zona_horaria)
       : await crearGastoDesdeWhatsApp(
           supabase,
           user.id,
           body,
           esAudio ? null : mediaUrl,
           mediaContentType,
-          { origenAudio: esAudio }
+          { origenAudio: esAudio, zonaHoraria: user.zona_horaria }
         )
 
-    await responderWhatsApp(userPhone, esRetiro, resultado, transcripcion)
+    await responderWhatsApp(userPhone, esRetiro, resultado, transcripcion, user.moneda)
 
     if (!resultado.success) {
       return NextResponse.json({ success: false })
@@ -148,7 +144,7 @@ async function confirmarPrimerMensaje(supabase, user, userPhone) {
 // Confirma la carga inicial de efectivo (o el error) por WhatsApp. El
 // usuario todavía tiene que confirmar el monto en el wizard -- este
 // mensaje solo le avisa que ya llegó, para que vuelva a la pantalla.
-async function responderCargaInicialWhatsApp(userPhone, resultado, transcripcion) {
+async function responderCargaInicialWhatsApp(userPhone, resultado, transcripcion, moneda) {
   try {
     const sufijoTranscripcion = transcripcion ? `\n(escuché: "${transcripcion}")` : ''
 
@@ -160,7 +156,7 @@ async function responderCargaInicialWhatsApp(userPhone, resultado, transcripcion
     const { cargaInicial } = resultado
     await enviarMensajeWhatsApp(
       userPhone,
-      `Recibido: ${formatoMoneda.format(cargaInicial.monto / 100)} en efectivo. Vuelve a la app para confirmarlo.${sufijoTranscripcion}`
+      `Recibido: ${formatMonto(cargaInicial.monto, moneda)} en efectivo. Vuelve a la app para confirmarlo.${sufijoTranscripcion}`
     )
   } catch (error) {
     console.error('Error mandando confirmacion de carga inicial por WhatsApp:', error)
@@ -172,7 +168,7 @@ async function responderCargaInicialWhatsApp(userPhone, resultado, transcripcion
 // venía de una nota de voz, se incluye lo que se transcribió: la
 // transcripción tiene más margen de error que texto escrito, así que el
 // usuario necesita poder detectar de inmediato si se entendió mal.
-async function responderWhatsApp(userPhone, esRetiro, resultado, transcripcion) {
+async function responderWhatsApp(userPhone, esRetiro, resultado, transcripcion, moneda) {
   try {
     const sufijoTranscripcion = transcripcion ? `\n(escuché: "${transcripcion}")` : ''
 
@@ -185,14 +181,14 @@ async function responderWhatsApp(userPhone, esRetiro, resultado, transcripcion) 
       const { retiro, banco } = resultado
       await enviarMensajeWhatsApp(
         userPhone,
-        `Retiro registrado: ${formatoMoneda.format(retiro.monto / 100)} de ${banco.nombre}${sufijoTranscripcion}`
+        `Retiro registrado: ${formatMonto(retiro.monto, moneda)} de ${banco.nombre}${sufijoTranscripcion}`
       )
     } else {
       const { gasto } = resultado
       const destino = gasto.tienda || gasto.categoria
       await enviarMensajeWhatsApp(
         userPhone,
-        `Gasto registrado: ${formatoMoneda.format(gasto.monto / 100)} en ${destino}${sufijoTranscripcion}`
+        `Gasto registrado: ${formatMonto(gasto.monto, moneda)} en ${destino}${sufijoTranscripcion}`
       )
     }
   } catch (error) {

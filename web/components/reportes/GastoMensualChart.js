@@ -2,15 +2,16 @@
 
 import { VChart } from '@visactor/react-vchart'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { formatMonto } from '@/lib/gastos/schema'
 import { CHART_COLORS } from '@/lib/theme/chartColors'
 import { useAppTheme } from '@/components/layout/AppTheme'
+import { useUserConfig } from '@/lib/config/UserConfigContext'
 
 // `dataSecundaria` es opcional: si se pasa, la gráfica dibuja barras
 // agrupadas por serie (ej. gasto vs. ingreso) con leyenda; si no, se
 // comporta como una sola serie igual que antes.
 export default function GastoMensualChart({ data, dataSecundaria, labelPrincipal = 'Gasto', labelIngreso = 'Ingreso' }) {
   const { isDark } = useAppTheme()
+  const { formatMonto } = useUserConfig()
   const esMultiSerie = !!dataSecundaria
 
   const serieUno = data.map((item) => ({

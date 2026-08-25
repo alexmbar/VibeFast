@@ -7,7 +7,7 @@ import { listarGastos } from '@/lib/gastos/client'
 import { listarIngresos, obtenerBalanceNeto } from '@/lib/ingresos/client'
 import { listarRecurrencias } from '@/lib/recurrencias/client'
 import { ocurrenciasEnRango } from '@/lib/recurrencias/fechas'
-import { formatMonto } from '@/lib/gastos/schema'
+import { useUserConfig } from '@/lib/config/UserConfigContext'
 import CategoriaChart from '@/components/reportes/CategoriaChart'
 import TendenciaChart from '@/components/reportes/TendenciaChart'
 import GastoTable from '@/components/gastos/GastoTable'
@@ -60,6 +60,7 @@ const OPCIONES_RANGO_TENDENCIA = [
 ]
 
 export default function DashboardPage() {
+  const { formatMonto } = useUserConfig()
   const [gastosMes, setGastosMes] = useState([])
   const [gastosSemana, setGastosSemana] = useState([])
   const [recientes, setRecientes] = useState([])

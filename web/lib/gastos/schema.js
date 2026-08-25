@@ -120,12 +120,14 @@ export function centavosToPesos(centavos) {
   return (centavos / 100).toFixed(2)
 }
 
-// Formatear monto para display (es-MX)
-export function formatMonto(centavos) {
+// Formatear monto para display (es-MX). `moneda` es la preferencia del
+// usuario (MXN/USD, ver lib/config/schema.js); el locale se queda fijo en
+// es-MX -- solo cambia el codigo/simbolo de moneda, no el idioma de la UI.
+export function formatMonto(centavos, moneda = 'MXN') {
   const pesos = centavos / 100
   return new Intl.NumberFormat('es-MX', {
     style: 'currency',
-    currency: 'MXN',
+    currency: moneda,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(pesos)

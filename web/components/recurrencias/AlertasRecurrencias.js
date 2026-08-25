@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { AlertCircle, Clock } from 'lucide-react'
 import { obtenerAlertasRecurrencias } from '@/lib/recurrencias/alertas'
-import { formatMonto } from '@/lib/gastos/schema'
+import { useUserConfig } from '@/lib/config/UserConfigContext'
 import { Card, CardContent } from '@/components/ui/card'
 
 const MAX_ITEMS = 5
 
 export default function AlertasRecurrencias() {
+  const { formatMonto } = useUserConfig()
   const [alertas, setAlertas] = useState(null)
 
   useEffect(() => {

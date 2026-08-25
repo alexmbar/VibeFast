@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Loader2, Wallet, Calculator, CalendarDays, TrendingUp, Scale } from 'lucide-react'
 import { listarBancos } from '@/lib/bancos/client'
 import { obtenerReportesResumen, obtenerGastosPorCorte } from '@/lib/reportes/client'
-import { formatMonto } from '@/lib/gastos/schema'
+import { useUserConfig } from '@/lib/config/UserConfigContext'
 import GastoMensualChart from '@/components/reportes/GastoMensualChart'
 import CategoriaChart from '@/components/reportes/CategoriaChart'
 import TendenciaChart from '@/components/reportes/TendenciaChart'
@@ -24,6 +24,7 @@ import {
 const RESUMEN_VACIO = { total_gastos: 0, total_ingresos: 0, num_gastos: 0, num_ingresos: 0, dias_unicos: 0 }
 
 export default function ReportesPage() {
+  const { formatMonto } = useUserConfig()
   const [resumen, setResumen] = useState(RESUMEN_VACIO)
   const [porMes, setPorMes] = useState([])
   const [porDia, setPorDia] = useState([])

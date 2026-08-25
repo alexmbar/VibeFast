@@ -3,23 +3,11 @@ import { createClient } from '@supabase/supabase-js'
 import { resolverDiaMes } from '@/lib/recurrencias/fechas'
 import { enviarPlantillaWhatsApp } from '@/lib/whatsapp/kapso'
 import { registrarIntegracion, alertarAdminsPorErroresCron } from '@/lib/admin/db'
+import { hoyEnZona } from '@/lib/config/fechas'
+import { ZONA_HORARIA_DEFAULT } from '@/lib/config/schema'
 
 const DIAS_ANTES = 3
 const TEMPLATE_NAME = 'recordatorio_pago_credito'
-
-// "Hoy" en America/Mexico_City -- mismo criterio que
-// web/app/api/cron/generar-recurrencias/route.js (ver regla 2 de
-// "Reglas de esquema" en CLAUDE.md: nunca new Date() a secas).
-function hoyMexico() {
-  const partes = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Mexico_City',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date())
-  const valores = Object.fromEntries(partes.map(p => [p.type, p.value]))
-  return `${valores.year}-${valores.month}-${valores.day}`
-}
 
 function formatFecha(anio, mes, dia) {
   return `${anio}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
@@ -70,8 +58,6 @@ export async function GET(request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
-  const hoy = hoyMexico()
-
   const { data: bancos, error } = await supabase
     .from('bancos')
     .select('id, nombre, alias, user_id, dia_limite_pago, ultimo_recordatorio_pago')
@@ -89,19 +75,20 @@ export async function GET(request) {
 
   for (const banco of bancos || []) {
     try {
+      const { data: perfil } = await supabase
+        .from('profiles')
+        .select('phone, zona_horaria')
+        .eq('id', banco.user_id)
+        .maybeSingle()
+
+      if (!perfil?.phone) continue
+
+      const hoy = hoyEnZona(perfil.zona_horaria || ZONA_HORARIA_DEFAULT)
       const fechaLimite = proximaFechaLimite(hoy, banco.dia_limite_pago)
       const diasRestantes = diasEntre(hoy, fechaLimite)
 
       if (diasRestantes !== DIAS_ANTES) continue
       if (banco.ultimo_recordatorio_pago === fechaLimite) continue
-
-      const { data: perfil } = await supabase
-        .from('profiles')
-        .select('phone')
-        .eq('id', banco.user_id)
-        .maybeSingle()
-
-      if (!perfil?.phone) continue
 
       await enviarPlantillaWhatsApp(perfil.phone, TEMPLATE_NAME, {
         nombre_banco: banco.alias || banco.nombre,

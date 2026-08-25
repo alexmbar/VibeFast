@@ -1,4 +1,4 @@
-import { fetchGastos } from "./helpers.js"
+import { fetchGastos, getAuthedSupabase } from "./helpers.js"
 import { CATEGORIAS, TIPOS_PAGO, CATEGORIA_LABELS, formatMonto } from "@/lib/gastos/schema.js"
 
 // Tool de solo lectura: lista gastos individuales (detalle, no agregado).
@@ -32,13 +32,14 @@ export const listarGastos = {
     additionalProperties: false,
   },
   async execute({ desde, hasta, categoria, tipo_pago } = {}) {
+    const { profile } = await getAuthedSupabase()
     const gastos = await fetchGastos({ desde, hasta, categoria, tipo_pago, limit: 30 })
 
     return {
       ok: true,
       gastos: gastos.map((g) => ({
         fecha: g.fecha,
-        monto: formatMonto(g.monto),
+        monto: formatMonto(g.monto, profile?.moneda),
         categoria: CATEGORIA_LABELS[g.categoria] || g.categoria,
         tipo_pago: g.tipo_pago,
         tienda: g.tienda,

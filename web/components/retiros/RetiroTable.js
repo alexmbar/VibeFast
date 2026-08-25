@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { Pencil, Trash2, Loader2 } from 'lucide-react'
 import { eliminarRetiro } from '@/lib/retiros/client'
-import { formatMonto, formatDate } from '@/lib/gastos/schema'
+import { useUserConfig } from '@/lib/config/UserConfigContext'
 import { useSortableTable } from '@/lib/hooks/useSortableTable'
 import { Button } from '@/components/ui/button'
 import {
@@ -36,6 +36,7 @@ function compararRetiros(a, b, columna) {
 }
 
 export default function RetiroTable({ retiros, onDelete, isLoading }) {
+  const { formatMonto, formatFecha } = useUserConfig()
   const [deleting, setDeleting] = useState(null)
   const { sorted, sortBy, sortDir, handleSort } = useSortableTable(retiros, compararRetiros)
 
@@ -94,7 +95,7 @@ export default function RetiroTable({ retiros, onDelete, isLoading }) {
       <TableBody>
         {sorted.map(retiro => (
           <TableRow key={retiro.id}>
-            <TableCell className="font-mono text-sm">{formatDate(retiro.fecha)}</TableCell>
+            <TableCell className="font-mono text-sm">{formatFecha(retiro.fecha)}</TableCell>
             <TableCell className="text-sm">{retiro.banco?.nombre || '-'}</TableCell>
             <TableCell className="text-right font-mono font-semibold tabular-nums">
               {formatMonto(retiro.monto)}

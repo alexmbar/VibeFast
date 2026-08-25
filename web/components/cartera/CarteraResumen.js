@@ -2,11 +2,12 @@
 
 import Link from 'next/link'
 import { Landmark, Plus, Loader2 } from 'lucide-react'
-import { formatMonto } from '@/lib/gastos/schema'
+import { useUserConfig } from '@/lib/config/UserConfigContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
 export default function CarteraResumen({ saldo, isLoading }) {
+  const { formatMonto } = useUserConfig()
   return (
     <Card>
       <CardHeader>

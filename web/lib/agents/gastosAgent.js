@@ -14,20 +14,12 @@ import { runAgent } from "./graph.js"
 import { logToolCall } from "@/lib/audit.js"
 import { registrarUsoOpenai } from "@/lib/admin/db.js"
 import { costoChatCentavos } from "@/lib/admin/costos.js"
+import { hoyEnZona } from "@/lib/config/fechas.js"
+import { ZONA_HORARIA_DEFAULT } from "@/lib/config/schema.js"
 
-// TODO CLAUDE.md: cuando exista zona horaria configurable por usuario,
-// leerla de ahí en vez de asumir America/Mexico_City.
-const TIMEZONE = "America/Mexico_City"
-
-// YYYY-MM-DD en la zona horaria de la app, para que el agente pueda ubicar
-// "hoy" al interpretar fechas relativas ("este mes", "la semana pasada").
-function getFechaHoy() {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: TIMEZONE }).format(new Date())
-}
-
-function buildSystemPrompt() {
-  const hoy = getFechaHoy()
-  return `Eres el agente de gastos de Controla Gasto. Hoy es ${hoy} (zona horaria ${TIMEZONE}) — usa esta fecha como referencia para calcular los parámetros desde/hasta cuando el usuario pregunte con fechas relativas ("hoy", "esta semana", "este mes", "el mes pasado", etc.). Nunca asumas otra fecha.
+function buildSystemPrompt(zonaHoraria = ZONA_HORARIA_DEFAULT) {
+  const hoy = hoyEnZona(zonaHoraria)
+  return `Eres el agente de gastos de Controla Gasto. Hoy es ${hoy} (zona horaria ${zonaHoraria}) — usa esta fecha como referencia para calcular los parámetros desde/hasta cuando el usuario pregunte con fechas relativas ("hoy", "esta semana", "este mes", "el mes pasado", etc.). Nunca asumas otra fecha.
 
 Solo puedes leer los gastos del usuario autenticado a través de las herramientas disponibles; no puedes crear, editar ni eliminar gastos, y no existe ninguna herramienta para hacerlo.
 
@@ -39,11 +31,11 @@ Si te preguntan por dinero que el usuario espera recibir o pagar en el futuro (e
 // messages: [{ role, content }] · conversationId?: string · userId/supabase:
 // para registrar el costo de OpenAI en uso_openai (best-effort, no bloquea
 // el streaming si falla).
-export function runGastosAgent({ messages, conversationId, userId, supabase }) {
+export function runGastosAgent({ messages, conversationId, userId, supabase, zonaHoraria }) {
   return runAgent({
     messages,
     conversationId,
-    systemPrompt: buildSystemPrompt(),
+    systemPrompt: buildSystemPrompt(zonaHoraria),
     tools: getGastosTools(),
     executeTool: executeGastosTool,
     onToolCall: logToolCall,

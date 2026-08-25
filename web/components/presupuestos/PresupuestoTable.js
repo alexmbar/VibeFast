@@ -5,7 +5,8 @@ import { useState } from 'react'
 import { Pencil, Trash2, Loader2 } from 'lucide-react'
 import { eliminarPresupuesto } from '@/lib/presupuestos/client'
 import { calcularPct } from '@/lib/presupuestos/schema'
-import { CATEGORIA_LABELS, formatMonto } from '@/lib/gastos/schema'
+import { CATEGORIA_LABELS } from '@/lib/gastos/schema'
+import { useUserConfig } from '@/lib/config/UserConfigContext'
 import { useSortableTable } from '@/lib/hooks/useSortableTable'
 import { Button } from '@/components/ui/button'
 import {
@@ -49,6 +50,7 @@ function colorPct(pct) {
 }
 
 export default function PresupuestoTable({ presupuestos, onChange, isLoading }) {
+  const { formatMonto } = useUserConfig()
   const [deleting, setDeleting] = useState(null)
   const { sorted, sortBy, sortDir, handleSort } = useSortableTable(presupuestos, compararPresupuestos, {
     defaultSortBy: 'categoria',

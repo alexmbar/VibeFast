@@ -1,7 +1,7 @@
 'use client'
 
 import { Loader2 } from 'lucide-react'
-import { formatMonto, formatDate } from '@/lib/gastos/schema'
+import { useUserConfig } from '@/lib/config/UserConfigContext'
 import { useSortableTable } from '@/lib/hooks/useSortableTable'
 import { cn } from '@/lib/utils'
 import {
@@ -31,6 +31,7 @@ function compararMovimientos(a, b, columna) {
 }
 
 export default function CarteraMovimientosTable({ movimientos, isLoading }) {
+  const { formatMonto, formatFecha } = useUserConfig()
   const { sorted, sortBy, sortDir, handleSort } = useSortableTable(movimientos, compararMovimientos)
 
   if (isLoading) {
@@ -75,7 +76,7 @@ export default function CarteraMovimientosTable({ movimientos, isLoading }) {
       <TableBody>
         {sorted.map(mov => (
           <TableRow key={mov.id}>
-            <TableCell className="font-mono text-sm">{formatDate(mov.fecha)}</TableCell>
+            <TableCell className="font-mono text-sm">{formatFecha(mov.fecha)}</TableCell>
             <TableCell className="text-sm">{mov.descripcion}</TableCell>
             <TableCell
               className={cn(

@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { formatMonto } from '@/lib/gastos/schema'
+import { useUserConfig } from '@/lib/config/UserConfigContext'
 import { Badge } from '@/components/ui/badge'
 import {
   Table,
@@ -34,6 +34,7 @@ function compararCiclos(a, b, columna) {
 }
 
 export default function GastosPorCorteTable({ ciclos, isLoading }) {
+  const { formatMonto } = useUserConfig()
   const [sortBy, setSortBy] = useState('periodo_inicio')
   const [sortDir, setSortDir] = useState('desc')
 
