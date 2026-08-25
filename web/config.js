@@ -51,8 +51,8 @@ const config = {
     waitlist: true, // Captura emails en landing
     googleAuth: true, // Login con Google — necesario
     emailLogin: false, // Magic link email — opcional
-    aiChat: false, // Chat AI en /chat — no usado
-    toolUse: false, // Tool use registry — no usado
+    aiChat: true, // Chat AI en /chat, con tool use (lib/tools)
+    toolUse: true, // Tool use registry — usado por /api/ai/chat
     agents: false, // LangGraph agents — no usado
     agenteGastos: true, // Agente de solo lectura en /agente, consulta gastos
     mcp: false, // Servidor MCP en /api/mcp — no usado
