@@ -12,6 +12,7 @@ import config from "@/config"
 import { getResend } from "@/lib/resend/client"
 import WaitlistConfirm from "@/lib/resend/templates/WaitlistConfirm"
 import Welcome from "@/lib/resend/templates/Welcome"
+import CronErrorAlert from "@/lib/resend/templates/CronErrorAlert"
 
 // Email genérico de texto plano. Lo usa la tool `enviar_email` del
 // registry (lib/tools) para que un agente pueda mandar correos.
@@ -48,6 +49,27 @@ export async function sendWaitlistConfirm(to) {
 
   if (error) {
     console.error("[resend] waitlist confirm:", error.message)
+    return { ok: false, error: error.message }
+  }
+  return { ok: true }
+}
+
+// Alerta interna a los admins cuando un cron (ej. generar-recurrencias)
+// termina con errores. `to` es un array de emails de profiles.role='admin'.
+export async function sendCronErrorAlert(to, cronNombre, errores) {
+  const resend = getResend()
+  if (!resend || to.length === 0) return { ok: false, skipped: true }
+
+  const { error } = await resend.emails.send({
+    from: config.email.from,
+    replyTo: config.email.replyTo,
+    to,
+    subject: `${config.app.name}: errores en el cron ${cronNombre}`,
+    react: <CronErrorAlert cronNombre={cronNombre} errores={errores} />,
+  })
+
+  if (error) {
+    console.error("[resend] cron error alert:", error.message)
     return { ok: false, error: error.message }
   }
   return { ok: true }

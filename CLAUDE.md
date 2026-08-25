@@ -268,20 +268,20 @@ por Kapso) sí lo permite sin ese trámite.
 ## TODO
 - Incluir carga y lectura de estados de cuenta "https://vibe-fast-web-omega.vercel.app/docs/recetas/chatbot-con-rag"
 
-- Alertar cuando el cron de recurrencias falla o se salta una regla:
-  `generar-recurrencias/route.js` ya acumula un arreglo `errores` (por
-  regla que truena al insertar) y lo regresa en el JSON de respuesta, pero
-  nadie lo lee — un cron de Vercel que responde 200 no dispara ninguna
-  alerta aunque `errores` no esté vacío. Falta decidir el canal (¿WhatsApp
-  al usuario afectado, como ya hace `notificarUsuarios()` para las
-  generaciones exitosas? ¿un aviso interno tipo email/Slack al admin?).
-  ~~Confirmar primero si `notificarUsuarios()` mismo está tragando
-  fallos~~ — confirmado y resuelto el 2026-08-24: sí tragaba el error de
-  envío (típicamente por la ventana de 24h de WhatsApp) con solo
-  `console.error`, sin dejar rastro consultable. Ahora también llama
+- ~~Alertar cuando el cron de recurrencias falla o se salta una regla~~ —
+  resuelto el 2026-08-24: `alertarAdmins()` en
+  `generar-recurrencias/route.js` manda un correo (Resend, template
+  `CronErrorAlert`) a todos los `profiles.role = 'admin'` cuando el
+  arreglo `errores` no queda vacío al terminar la corrida (antes nadie lo
+  leía — un cron de Vercel que responde 200 no dispara ninguna alerta por
+  sí solo). Se eligió email sobre WhatsApp porque es una alerta interna,
+  no al usuario final, y así no choca con la ventana de 24h de WhatsApp.
+  Además, `notificarUsuarios()` (las confirmaciones por WhatsApp a
+  usuarios cuando se generan sus recurrencias) también tragaba fallos de
+  envío en silencio — confirmado y resuelto el mismo día: ahora llama
   `registrarIntegracion(..., tipo: 'cron_recurrencias_notificacion')`, así
-  que el fallo queda en el log de integraciones aunque siga sin haber un
-  canal de alerta externo. Las alertas *dentro de la app* (pendientes de
+  que ese fallo también queda en el log de integraciones. Las alertas
+  *dentro de la app* (pendientes de
   confirmar / próximas a generarse) ya están resueltas — ver
   `web/lib/recurrencias/alertas.js` y `AlertasRecurrencias` (dashboard,
   `/recurrencias`, badge en el nav); esto es solo para cuando el cron
