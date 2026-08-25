@@ -30,8 +30,8 @@ export default async function AppLayout({ children }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b bg-card shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3">
+      <header className="sticky top-0 z-40 h-14 border-b bg-card shadow-sm">
+        <div className="flex h-full items-center justify-between px-4">
           <Link href="/gastos" className="flex items-center gap-2 font-bold">
             <Logo className="size-7" />
             {config.brand.logoText}
@@ -51,8 +51,10 @@ export default async function AppLayout({ children }) {
         <CuentaSuspendida />
       ) : profile?.onboarding_step === "completado" ? (
         <div className="mx-auto flex w-full max-w-6xl flex-1 gap-6 px-4 py-6">
-          <aside className="hidden w-52 shrink-0 flex-col justify-between md:flex">
-            <AppNav />
+          <aside className="hidden w-52 shrink-0 flex-col justify-between md:sticky md:top-[calc(3.5rem_+_1.5rem)] md:flex md:h-[calc(100vh_-_6.5rem)]">
+            <div className="min-h-0 overflow-y-auto">
+              <AppNav />
+            </div>
             <div className="border-t pt-3">
               <UserMenu user={user} className="w-full justify-start" />
             </div>
