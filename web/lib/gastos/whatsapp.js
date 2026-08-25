@@ -4,6 +4,7 @@ import { descargarMediaKapso } from '@/lib/whatsapp/kapso'
 import { subirTicketADrive } from '@/lib/google-drive/client'
 import { registrarIntegracion, registrarUsoOpenai } from '@/lib/admin/db'
 import { costoChatCentavos } from '@/lib/admin/costos'
+import { verificarPresupuesto } from '@/lib/presupuestos/verificar'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -101,6 +102,8 @@ export async function crearGastoDesdeWhatsApp(
         error: 'Error al guardar el gasto',
       }
     }
+
+    await verificarPresupuesto(supabase, userId, data.categoria)
 
     // Subida a Drive best-effort: si el usuario no tiene Drive
     // conectado o la subida falla, el gasto ya quedo guardado igual.

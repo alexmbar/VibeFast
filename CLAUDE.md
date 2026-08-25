@@ -103,6 +103,44 @@ corto se usa el último día). Se gestiona en `/recurrencias`; sigue las
 mismas reglas de esquema que gastos/ingresos (monto en centavos, fecha
 `date`, efectivo sin banco).
 
+## Presupuestos
+
+Límite de gasto por categoría (tabla `presupuestos`, un presupuesto activo
+por categoría por usuario). El periodo del presupuesto es el mes calendario
+por defecto, o el ciclo de corte de una tarjeta de crédito específica si el
+presupuesto se liga a un `banco_id` (mismo cálculo de ciclo que "Reportes
+por periodo de corte" arriba, pero solo el ciclo vigente). El gasto
+acumulado del periodo se calcula en la función SQL `presupuestos_estado()`
+(`038_presupuestos_estado_function.sql`), nunca sumando en JS — mismo
+patrón que `cartera_saldo()`/`gastos_por_corte()`. Un presupuesto creado a
+mitad de periodo cuenta *todo* el gasto de ese periodo, no solo el
+posterior a su creación.
+
+Dos umbrales por periodo, cada uno se avisa una sola vez: 80%
+("acercándose") y 100% ("excedido"). El aviso es doble: dentro de la app
+(`AlertasPresupuestos`, en `/presupuestos` y el dashboard, calculado en vivo
+sin marca de idempotencia) y por WhatsApp con el template pre-aprobado
+`presupuesto_alerta` (parámetros `categoria`, `porcentaje`, `monto_limite`,
+`total_gastado`). La idempotencia del envío por WhatsApp vive en
+`presupuestos.ultimo_alerta_pct`/`ultimo_alerta_periodo_inicio`, mismo
+patrón que `bancos.ultimo_recordatorio_pago`.
+
+**Setup requerido:** el template `presupuesto_alerta` debe crearse y
+aprobarse en Meta/Kapso antes de que el envío funcione en producción —
+mientras tanto los intentos fallan y quedan registrados en
+`integraciones_log` (`tipo: 'presupuesto_verificacion'`), sin bloquear la
+captura del gasto ni la alerta dentro de la app.
+
+La verificación (`verificarPresupuesto()` en `web/lib/presupuestos/
+verificar.js`) se llama después de cada inserción o edición de un gasto
+que pueda cruzar un umbral: creación manual (`web/app/api/gastos/
+route.js`), captura por WhatsApp (`web/lib/gastos/whatsapp.js`),
+generación por el cron de recurrencias (`web/app/api/cron/
+generar-recurrencias/route.js`), y edición de monto/categoría
+(`web/app/api/gastos/[id]/route.js`). No hay un helper compartido de
+creación de gasto en el proyecto — cada uno de esos archivos inserta su
+propia fila, así que la llamada se agrega en los cuatro lugares.
+
 ## Reglas de esquema (no negociables)
 
 Estas dos ya causaron bugs. No las cambies por los defaults del generador de
@@ -375,10 +413,14 @@ por Kapso) sí lo permite sin ese trámite.
   proyectado, y cómo se relaciona con Cartera (ver ítem de retiros en
   efectivo) si es que comparten saldo.
 
-- Presupuestos: límite mensual por categoría (y quizá global), con
-  comparación gasto real vs. presupuestado y aviso al acercarse o pasarse
-  del límite (¿por WhatsApp, con un template pre-aprobado igual que el
-  recordatorio de pago de crédito arriba?).
+- ~~Presupuestos~~ — resuelto el 2026-08-25: límite por categoría (tabla
+  `presupuestos`, migraciones `037_presupuestos.sql` y
+  `038_presupuestos_estado_function.sql`), mes calendario por defecto o
+  ciclo de corte de una tarjeta si se liga a un `banco_id`, con aviso
+  doble (app + WhatsApp, template `presupuesto_alerta`) en 80% y 100% del
+  periodo — ver "Presupuestos" arriba. Límite global se descartó a
+  propósito (solo se pidió por categoría). Pendiente: crear y aprobar el
+  template en Meta/Kapso (ver "Setup requerido" en esa sección).
 
 - Presupuestos predictivos: en vez de que el usuario capture el límite a
   mano, sugerirlo/ajustarlo con base en el historial de gastos por

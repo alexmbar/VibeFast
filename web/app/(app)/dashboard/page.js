@@ -13,6 +13,7 @@ import TendenciaChart from '@/components/reportes/TendenciaChart'
 import GastoTable from '@/components/gastos/GastoTable'
 import IngresoTable from '@/components/ingresos/IngresoTable'
 import AlertasRecurrencias from '@/components/recurrencias/AlertasRecurrencias'
+import AlertasPresupuestos from '@/components/presupuestos/AlertasPresupuestos'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 
@@ -194,6 +195,7 @@ export default function DashboardPage() {
       </div>
 
       <AlertasRecurrencias />
+      <AlertasPresupuestos />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>

@@ -4,6 +4,7 @@ import { ocurrenciasEnRango, siguienteDia } from '@/lib/recurrencias/fechas'
 import { categoriaLabelsDe } from '@/lib/recurrencias/schema'
 import { enviarMensajeWhatsApp } from '@/lib/whatsapp/kapso'
 import { registrarIntegracion, alertarAdminsPorErroresCron } from '@/lib/admin/db'
+import { verificarPresupuesto } from '@/lib/presupuestos/verificar'
 
 const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 
@@ -117,6 +118,10 @@ export async function GET(request) {
             detalle: { reglaId: regla.id, fecha, mensaje: insertError.message },
           })
           continue
+        }
+
+        if (regla.tipo === 'gasto') {
+          await verificarPresupuesto(supabase, regla.user_id, regla.categoria)
         }
 
         filasGeneradas++

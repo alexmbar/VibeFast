@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { validateGasto, CATEGORIAS, TIPOS_PAGO } from '@/lib/gastos/schema'
+import { verificarPresupuesto } from '@/lib/presupuestos/verificar'
 
 export async function GET(request) {
   const supabase = await createClient()
@@ -142,6 +143,8 @@ export async function POST(request) {
       { status: 500 }
     )
   }
+
+  await verificarPresupuesto(supabase, user.id, data.categoria)
 
   return NextResponse.json(data, { status: 201 })
 }

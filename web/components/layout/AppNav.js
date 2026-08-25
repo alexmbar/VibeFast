@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Wallet, TrendingUp, Landmark, BarChart3, Bot, Repeat } from "lucide-react"
+import { LayoutDashboard, Wallet, TrendingUp, Landmark, BarChart3, Bot, Repeat, PiggyBank } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { obtenerAlertasRecurrencias } from "@/lib/recurrencias/alertas"
+import { obtenerAlertasPresupuestos } from "@/lib/presupuestos/alertas"
 
 // Los componentes de ícono (funciones) no son serializables entre el
 // server component padre (app)/layout.js y este client component, así
@@ -15,25 +16,35 @@ const NAV = [
   { href: "/gastos", label: "Gastos", icon: Wallet },
   { href: "/ingresos", label: "Ingresos", icon: TrendingUp },
   { href: "/recurrencias", label: "Recurrencias", icon: Repeat },
+  { href: "/presupuestos", label: "Presupuestos", icon: PiggyBank },
   { href: "/cartera", label: "Cartera", icon: Landmark },
   { href: "/reportes", label: "Reportes", icon: BarChart3 },
   { href: "/agente", label: "Agente", icon: Bot },
 ]
+
+// href -> función que carga el conteo de alertas para el badge de ese
+// item. Cada entrada de NAV que necesite badge se agrega aquí.
+const ALERTAS_POR_HREF = {
+  "/recurrencias": obtenerAlertasRecurrencias,
+  "/presupuestos": obtenerAlertasPresupuestos,
+}
 
 // Nav lateral de (app). Cliente aparte del layout (server component) para
 // poder resaltar la ruta activa con usePathname sin convertir el layout
 // -- y con él, el guard de auth -- en cliente.
 export default function AppNav() {
   const pathname = usePathname()
-  const [alertasCount, setAlertasCount] = useState(0)
+  const [alertasPorHref, setAlertasPorHref] = useState({})
 
   useEffect(() => {
     let vigente = true
-    obtenerAlertasRecurrencias()
-      .then((data) => {
-        if (vigente) setAlertasCount(data.total)
-      })
-      .catch((error) => console.error("Error loading alertas recurrencias:", error))
+    Object.entries(ALERTAS_POR_HREF).forEach(([href, obtenerAlertas]) => {
+      obtenerAlertas()
+        .then((data) => {
+          if (vigente) setAlertasPorHref((prev) => ({ ...prev, [href]: data.total }))
+        })
+        .catch((error) => console.error(`Error loading alertas ${href}:`, error))
+    })
     return () => {
       vigente = false
     }
@@ -43,6 +54,7 @@ export default function AppNav() {
     <nav className="flex flex-col gap-0.5">
       {NAV.map(({ href, label, icon: Icon }) => {
         const active = pathname === href || pathname?.startsWith(`${href}/`)
+        const alertasCount = alertasPorHref[href] || 0
         return (
           <Link
             key={href}
@@ -56,7 +68,7 @@ export default function AppNav() {
           >
             <Icon className="size-4" />
             {label}
-            {href === "/recurrencias" && alertasCount > 0 && (
+            {alertasCount > 0 && (
               <span className="ml-auto flex size-5 items-center justify-center rounded-full bg-amber-500 text-xs font-semibold text-white">
                 {alertasCount}
               </span>
