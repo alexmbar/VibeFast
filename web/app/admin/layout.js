@@ -4,6 +4,8 @@ import config from "@/config"
 import { getUser, createClient } from "@/lib/supabase/server"
 import UserMenu from "@/components/auth/UserMenu"
 import Logo from "@/components/Logo"
+import AdminNav from "@/components/layout/AdminNav"
+import { ToastProvider, Toaster } from "@/components/ui/toast"
 
 // Layout de /admin. El middleware ya valida profiles.role = 'admin'
 // antes de dejar pasar el request, pero revalidamos aquí (mismo criterio
@@ -23,23 +25,29 @@ export default async function AdminLayout({ children }) {
   if (profile?.role !== "admin") redirect(config.auth.afterLoginUrl)
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b bg-card shadow-sm">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/admin" className="flex items-center gap-2 font-bold">
-            <Logo className="size-7" />
-            Admin
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/gastos" className="text-sm text-base-content/70 hover:underline">
-              Volver a la app
+    <ToastProvider>
+      <div className="flex min-h-screen flex-col bg-background text-foreground">
+        <header className="sticky top-0 z-40 border-b bg-card shadow-sm">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
+            <Link href="/admin" className="flex items-center gap-2 font-bold">
+              <Logo className="size-7" />
+              Admin
             </Link>
-            <UserMenu user={user} />
+            <div className="flex items-center gap-3">
+              <Link href="/gastos" className="text-sm text-base-content/70 hover:underline">
+                Volver a la app
+              </Link>
+              <UserMenu user={user} />
+            </div>
           </div>
-        </div>
-      </header>
+          <div className="mx-auto w-full max-w-6xl px-4 pb-2">
+            <AdminNav />
+          </div>
+        </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
-    </div>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
+      </div>
+      <Toaster />
+    </ToastProvider>
   )
 }

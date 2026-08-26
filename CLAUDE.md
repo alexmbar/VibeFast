@@ -245,6 +245,8 @@ Apps similares en las que nos podemos basar para ideas de producto/UX. Lista
 abierta: se agregan conforme se vayan encontrando.
 
 - https://finchat.mx/
+- https://zentavo.lat
+
 
 ## Estilo de código
 
@@ -388,11 +390,15 @@ por Kapso) sí lo permite sin ese trámite.
   `balance_neto`. `reportes/page.js` ya no llama `listarGastos`/
   `listarIngresos` en absoluto.
 
-- CONFIGURACIONES: agregar un apartado para configurar zona horaria, tipo de
-  moneda y formato de fecha (por usuario, no global). Ojo: `fecha` es `date`
-  por diseño (ver "Reglas de esquema"); la zona horaria configurable aplica a
-  cómo se interpreta la hora de captura por WhatsApp antes de guardar el
-  `date`, no a que `fecha` pase a `timestamptz`.
+- ~~CONFIGURACIONES~~ — resuelto: apartado en `/configuraciones` para
+  zona horaria, moneda y formato de fecha por usuario (columnas en
+  `profiles`, migración `039_configuraciones_usuario.sql`). La zona
+  horaria no cambia el tipo de `fecha` (sigue `date`, ver "Reglas de
+  esquema") — solo se usa para calcular "hoy" (`hoyEnZona()` en
+  `web/lib/config/fechas.js`) al interpretar la hora de captura por
+  WhatsApp antes de guardar el `date` (`web/lib/gastos/whatsapp.js`). El
+  formato de fecha es solo de despliegue (`formatFechaDisplay()`), nunca
+  reinterpreta el string `date` con huso horario.
 
 - ~~Control de ingresos~~ — resuelto: captura manual (monto, fecha,
   categoría/nota, tabla `ingresos`, migración `019_ingresos.sql`), vista
@@ -442,35 +448,38 @@ por Kapso) sí lo permite sin ese trámite.
   usa ese mismo mecanismo caso por caso — ver "Alertar cuando el cron de
   recurrencias falla" arriba.
 
-- Panel del dueño (`/admin`): el backend ya está construido — rol `admin`
-  en `profiles` con trigger anti-auto-promoción
-  (`027_admin_role_y_estado_cuenta.sql`), tablas `integraciones_log`
-  (`029`) y `uso_openai` (`030`), funciones agregadas
-  `admin_metricas_negocio`/`admin_costos_openai_diario`/
-  `admin_costos_openai_por_usuario` (`031_admin_funciones.sql`,
-  `SECURITY DEFINER`, ejecución restringida a `service_role`), y los
-  endpoints `/api/admin/{usuarios,metricas,integraciones,costos}` sobre
-  `web/lib/admin/db.js`. `web/app/admin/page.js` sigue siendo un
-  placeholder — falta la UI que consuma esos cuatro endpoints:
-  - Cards de métricas de negocio (usuarios totales, altas de la semana,
-    activos 30d, gastos/ingresos del mes).
-  - Tabla de usuarios (ordenable, mismo patrón que el resto de la app)
-    con acción de suspender/reactivar cuenta (`actualizarEstadoCuenta`,
-    ya audita en `admin_audit_log`) y detalle por usuario — que nunca
-    debe mostrar montos, categorías, tiendas ni bancos del usuario, solo
-    conteos y costo de OpenAI (frontera ya documentada en
-    `obtenerUsuario` en `db.js`).
-  - Costos de OpenAI por día y por usuario.
-  - Salud de integraciones (`integraciones_log`) filtrable por tipo/
-    nivel/resuelto: errores de webhook WhatsApp, cron de recurrencias,
-    OpenAI Vision, costo anómalo.
+- ~~Panel del dueño (`/admin`) — UI~~ — resuelto el 2026-08-26: la UI que
+  consume los cuatro endpoints ya existía (backend construido antes, ver
+  historial) queda armada sobre `web/lib/admin/client.js` con
+  `AdminNav` (`web/components/layout/AdminNav.js`) y cuatro rutas:
+  - `/admin` — cards de métricas de negocio (usuarios totales, altas de
+    la semana, activos 30d, gastos/ingresos del mes), vía
+    `admin_metricas_negocio`.
+  - `/admin/usuarios` — tabla ordenable (mismo patrón `▲/▼` del resto de
+    la app, pero con orden/paginación resueltos en el servidor vía
+    `orderBy`/`orderDir`/`limit`/`offset`, no en el cliente como
+    `GastoTable`, porque aquí no se cargan todas las filas de una vez)
+    con acción de suspender/reactivar (`ConfirmDialog` antes de aplicar).
+  - `/admin/usuarios/[id]` — detalle: perfil, actividad (conteos +
+    costo de OpenAI) y auditoría. Nunca pinta montos, categorías,
+    tiendas ni bancos del usuario — frontera ya impuesta por
+    `obtenerUsuario()` en `db.js`, la UI solo consume lo que ese
+    endpoint expone.
+  - `/admin/integraciones` — filtrable por tipo/nivel/resuelto.
+  - `/admin/costos` — por día y por usuario, con rango de fechas.
+    `uso_openai.costo_estimado_centavos` está en centavos de **USD**, no
+    MXN (ver comentario en `web/lib/admin/costos.js`) — se formatea con
+    `formatMonto(centavos, 'USD')`, no con el default MXN del resto de
+    la app.
 
-  Dos huecos adicionales detectados al revisar esto (no bloquean la UI,
-  pero conviene resolverlos en el mismo esfuerzo): no hay manera de ver
-  en el panel si una plantilla de WhatsApp (ej. `presupuesto_alerta`)
-  sigue pendiente de aprobación en Meta/Kapso — hoy solo se infiere de
-  fallos repetidos en `integraciones_log`; y no hay vista de la última
-  corrida de cada cron (recurrencias, recordatorio de pago) — esa
-  información solo llega por correo vía `alertarAdminsPorErroresCron`,
-  no queda visible en `/admin`.
+  Quedan pendientes los dos huecos que ya se habían detectado y no forman
+  parte de este alcance (consumir los cuatro endpoints existentes): no
+  hay manera de ver en el panel si una plantilla de WhatsApp (ej.
+  `presupuesto_alerta`) sigue pendiente de aprobación en Meta/Kapso — hoy
+  solo se infiere de fallos repetidos en `integraciones_log`, filtrable
+  en `/admin/integraciones` pero sin una señal explícita de "plantilla no
+  aprobada"; y no hay vista de la última corrida de cada cron
+  (recurrencias, recordatorio de pago) — esa información solo llega por
+  correo vía `alertarAdminsPorErroresCron`, no queda visible en `/admin`.
+  Ninguno de los dos tiene endpoint ni función SQL propia todavía.
 
