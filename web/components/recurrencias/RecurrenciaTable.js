@@ -12,8 +12,10 @@ import {
 } from '@/lib/recurrencias/schema'
 import { useUserConfig } from '@/lib/config/UserConfigContext'
 import { useSortableTable } from '@/lib/hooks/useSortableTable'
+import { useToast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
   Table,
   TableHeader,
@@ -61,8 +63,10 @@ function detalleFrecuencia(regla) {
 
 export default function RecurrenciaTable({ recurrencias, onChange, isLoading }) {
   const { formatMonto } = useUserConfig()
+  const toast = useToast()
   const [deleting, setDeleting] = useState(null)
   const [toggling, setToggling] = useState(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const { sorted, sortBy, sortDir, handleSort } = useSortableTable(recurrencias, compararRecurrencias, {
     defaultSortBy: 'activo',
     defaultSortDir: 'desc',
@@ -74,21 +78,21 @@ export default function RecurrenciaTable({ recurrencias, onChange, isLoading }) 
       const actualizada = await actualizarRecurrencia(regla.id, { activo: !regla.activo })
       onChange?.(actualizada)
     } catch (error) {
-      alert(error.message)
+      toast.error(error.message)
     } finally {
       setToggling(null)
     }
   }
 
-  async function handleDelete(id) {
-    if (!confirm('¿Eliminar esta recurrencia? Los movimientos ya generados no se borran, solo dejan de generarse nuevos.')) return
-
+  async function handleDelete() {
+    const id = confirmDeleteId
     setDeleting(id)
     try {
       await eliminarRecurrencia(id)
       onChange?.(null, id)
+      setConfirmDeleteId(null)
     } catch (error) {
-      alert(error.message)
+      toast.error(error.message)
     } finally {
       setDeleting(null)
     }
@@ -112,6 +116,7 @@ export default function RecurrenciaTable({ recurrencias, onChange, isLoading }) 
   }
 
   return (
+    <>
     <Table>
       <TableHeader>
         <TableRow>
@@ -163,7 +168,7 @@ export default function RecurrenciaTable({ recurrencias, onChange, isLoading }) 
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  onClick={() => handleDelete(regla.id)}
+                  onClick={() => setConfirmDeleteId(regla.id)}
                   disabled={deleting === regla.id}
                   title="Eliminar recurrencia"
                   aria-busy={deleting === regla.id}
@@ -177,5 +182,15 @@ export default function RecurrenciaTable({ recurrencias, onChange, isLoading }) 
         ))}
       </TableBody>
     </Table>
+    <ConfirmDialog
+      open={!!confirmDeleteId}
+      onOpenChange={open => !open && setConfirmDeleteId(null)}
+      title="¿Eliminar esta recurrencia?"
+      description="Los movimientos ya generados no se borran, solo dejan de generarse nuevos."
+      confirmLabel="Eliminar"
+      onConfirm={handleDelete}
+      loading={deleting === confirmDeleteId}
+    />
+    </>
   )
 }

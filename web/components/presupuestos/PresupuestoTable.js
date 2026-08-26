@@ -8,7 +8,9 @@ import { calcularPct } from '@/lib/presupuestos/schema'
 import { CATEGORIA_LABELS } from '@/lib/gastos/schema'
 import { useUserConfig } from '@/lib/config/UserConfigContext'
 import { useSortableTable } from '@/lib/hooks/useSortableTable'
+import { useToast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
   Table,
   TableHeader,
@@ -51,21 +53,23 @@ function colorPct(pct) {
 
 export default function PresupuestoTable({ presupuestos, onChange, isLoading }) {
   const { formatMonto } = useUserConfig()
+  const toast = useToast()
   const [deleting, setDeleting] = useState(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const { sorted, sortBy, sortDir, handleSort } = useSortableTable(presupuestos, compararPresupuestos, {
     defaultSortBy: 'categoria',
     defaultSortDir: 'asc',
   })
 
-  async function handleDelete(id) {
-    if (!confirm('¿Pausar este presupuesto? Puedes crear uno nuevo para la misma categoría después.')) return
-
+  async function handleDelete() {
+    const id = confirmDeleteId
     setDeleting(id)
     try {
       await eliminarPresupuesto(id)
       onChange?.(null, id)
+      setConfirmDeleteId(null)
     } catch (error) {
-      alert(error.message)
+      toast.error(error.message)
     } finally {
       setDeleting(null)
     }
@@ -89,6 +93,7 @@ export default function PresupuestoTable({ presupuestos, onChange, isLoading }) 
   }
 
   return (
+    <>
     <Table>
       <TableHeader>
         <TableRow>
@@ -135,7 +140,7 @@ export default function PresupuestoTable({ presupuestos, onChange, isLoading }) 
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    onClick={() => handleDelete(p.id)}
+                    onClick={() => setConfirmDeleteId(p.id)}
                     disabled={deleting === p.id}
                     title="Pausar presupuesto"
                     aria-busy={deleting === p.id}
@@ -150,5 +155,16 @@ export default function PresupuestoTable({ presupuestos, onChange, isLoading }) 
         })}
       </TableBody>
     </Table>
+    <ConfirmDialog
+      open={!!confirmDeleteId}
+      onOpenChange={open => !open && setConfirmDeleteId(null)}
+      title="¿Pausar este presupuesto?"
+      description="Puedes crear uno nuevo para la misma categoría después."
+      confirmLabel="Pausar"
+      variant="default"
+      onConfirm={handleDelete}
+      loading={deleting === confirmDeleteId}
+    />
+    </>
   )
 }

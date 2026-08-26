@@ -7,8 +7,10 @@ import { eliminarIngreso, actualizarIngreso } from '@/lib/ingresos/client'
 import { CATEGORIA_LABELS } from '@/lib/ingresos/schema'
 import { useUserConfig } from '@/lib/config/UserConfigContext'
 import { useSortableTable } from '@/lib/hooks/useSortableTable'
+import { useToast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
   Table,
   TableHeader,
@@ -39,19 +41,21 @@ function compararIngresos(a, b, columna) {
 
 export default function IngresoTable({ ingresos, onDelete, onUpdate, isLoading }) {
   const { formatMonto, formatFecha } = useUserConfig()
+  const toast = useToast()
   const [deleting, setDeleting] = useState(null)
   const [confirming, setConfirming] = useState(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const { sorted, sortBy, sortDir, handleSort } = useSortableTable(ingresos, compararIngresos)
 
-  async function handleDelete(id) {
-    if (!confirm('¿Eliminar este ingreso?')) return
-
+  async function handleDelete() {
+    const id = confirmDeleteId
     setDeleting(id)
     try {
       await eliminarIngreso(id)
       onDelete?.(id)
+      setConfirmDeleteId(null)
     } catch (error) {
-      alert(error.message)
+      toast.error(error.message)
     } finally {
       setDeleting(null)
     }
@@ -66,7 +70,7 @@ export default function IngresoTable({ ingresos, onDelete, onUpdate, isLoading }
       const actualizado = await actualizarIngreso(id, {})
       onUpdate?.(actualizado)
     } catch (error) {
-      alert(error.message)
+      toast.error(error.message)
     } finally {
       setConfirming(null)
     }
@@ -90,6 +94,7 @@ export default function IngresoTable({ ingresos, onDelete, onUpdate, isLoading }
   }
 
   return (
+    <>
     <Table>
       <TableHeader>
         <TableRow>
@@ -147,7 +152,7 @@ export default function IngresoTable({ ingresos, onDelete, onUpdate, isLoading }
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  onClick={() => handleDelete(ingreso.id)}
+                  onClick={() => setConfirmDeleteId(ingreso.id)}
                   disabled={deleting === ingreso.id}
                   title="Eliminar ingreso"
                   aria-busy={deleting === ingreso.id}
@@ -161,5 +166,15 @@ export default function IngresoTable({ ingresos, onDelete, onUpdate, isLoading }
         ))}
       </TableBody>
     </Table>
+    <ConfirmDialog
+      open={!!confirmDeleteId}
+      onOpenChange={open => !open && setConfirmDeleteId(null)}
+      title="¿Eliminar este ingreso?"
+      description="Esta acción no se puede deshacer."
+      confirmLabel="Eliminar"
+      onConfirm={handleDelete}
+      loading={deleting === confirmDeleteId}
+    />
+    </>
   )
 }

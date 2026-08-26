@@ -7,6 +7,7 @@ import { actualizarBanco } from '@/lib/bancos/client'
 import { TIPO_BANCO_LABELS } from '@/lib/bancos/schema'
 import { useUserConfig } from '@/lib/config/UserConfigContext'
 import { useSortableTable } from '@/lib/hooks/useSortableTable'
+import { useToast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -43,6 +44,7 @@ function compararBancos(a, b, columna) {
 
 export default function BancoTable({ bancos, onToggleActivo, isLoading }) {
   const { formatMonto } = useUserConfig()
+  const toast = useToast()
   const [toggling, setToggling] = useState(null)
   const { sorted, sortBy, sortDir, handleSort } = useSortableTable(bancos, compararBancos, {
     defaultSortBy: 'nombre',
@@ -55,7 +57,7 @@ export default function BancoTable({ bancos, onToggleActivo, isLoading }) {
       const actualizado = await actualizarBanco(banco.id, { activo: !banco.activo })
       onToggleActivo?.(actualizado)
     } catch (error) {
-      alert(error.message)
+      toast.error(error.message)
     } finally {
       setToggling(null)
     }

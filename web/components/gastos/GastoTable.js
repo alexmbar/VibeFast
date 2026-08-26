@@ -6,8 +6,10 @@ import { Pencil, Trash2, Loader2, Check } from 'lucide-react'
 import { eliminarGasto, actualizarGasto } from '@/lib/gastos/client'
 import { CATEGORIA_LABELS, TIPO_PAGO_LABELS, extractHora } from '@/lib/gastos/schema'
 import { useUserConfig } from '@/lib/config/UserConfigContext'
+import { useToast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
   Table,
   TableHeader,
@@ -42,8 +44,10 @@ function compararGastos(a, b, columna) {
 
 export default function GastoTable({ gastos, onDelete, onUpdate, isLoading }) {
   const { formatMonto, formatFecha } = useUserConfig()
+  const toast = useToast()
   const [deleting, setDeleting] = useState(null)
   const [confirming, setConfirming] = useState(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [sortBy, setSortBy] = useState('fecha')
   const [sortDir, setSortDir] = useState('desc')
 
@@ -63,15 +67,15 @@ export default function GastoTable({ gastos, onDelete, onUpdate, isLoading }) {
     }
   }
 
-  async function handleDelete(id) {
-    if (!confirm('¿Eliminar este gasto?')) return
-
+  async function handleDelete() {
+    const id = confirmDeleteId
     setDeleting(id)
     try {
       await eliminarGasto(id)
       onDelete?.(id)
+      setConfirmDeleteId(null)
     } catch (error) {
-      alert(error.message)
+      toast.error(error.message)
     } finally {
       setDeleting(null)
     }
@@ -86,7 +90,7 @@ export default function GastoTable({ gastos, onDelete, onUpdate, isLoading }) {
       const actualizado = await actualizarGasto(id, {})
       onUpdate?.(actualizado)
     } catch (error) {
-      alert(error.message)
+      toast.error(error.message)
     } finally {
       setConfirming(null)
     }
@@ -110,6 +114,7 @@ export default function GastoTable({ gastos, onDelete, onUpdate, isLoading }) {
   }
 
   return (
+    <>
     <Table>
       <TableHeader>
         <TableRow>
@@ -172,7 +177,7 @@ export default function GastoTable({ gastos, onDelete, onUpdate, isLoading }) {
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  onClick={() => handleDelete(gasto.id)}
+                  onClick={() => setConfirmDeleteId(gasto.id)}
                   disabled={deleting === gasto.id}
                   title="Eliminar gasto"
                   aria-busy={deleting === gasto.id}
@@ -186,5 +191,15 @@ export default function GastoTable({ gastos, onDelete, onUpdate, isLoading }) {
         ))}
       </TableBody>
     </Table>
+    <ConfirmDialog
+      open={!!confirmDeleteId}
+      onOpenChange={open => !open && setConfirmDeleteId(null)}
+      title="¿Eliminar este gasto?"
+      description="Esta acción no se puede deshacer."
+      confirmLabel="Eliminar"
+      onConfirm={handleDelete}
+      loading={deleting === confirmDeleteId}
+    />
+    </>
   )
 }

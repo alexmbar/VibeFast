@@ -6,7 +6,9 @@ import { Pencil, Trash2, Loader2 } from 'lucide-react'
 import { eliminarRetiro } from '@/lib/retiros/client'
 import { useUserConfig } from '@/lib/config/UserConfigContext'
 import { useSortableTable } from '@/lib/hooks/useSortableTable'
+import { useToast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
   Table,
   TableHeader,
@@ -37,18 +39,20 @@ function compararRetiros(a, b, columna) {
 
 export default function RetiroTable({ retiros, onDelete, isLoading }) {
   const { formatMonto, formatFecha } = useUserConfig()
+  const toast = useToast()
   const [deleting, setDeleting] = useState(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const { sorted, sortBy, sortDir, handleSort } = useSortableTable(retiros, compararRetiros)
 
-  async function handleDelete(id) {
-    if (!confirm('¿Eliminar este retiro?')) return
-
+  async function handleDelete() {
+    const id = confirmDeleteId
     setDeleting(id)
     try {
       await eliminarRetiro(id)
       onDelete?.(id)
+      setConfirmDeleteId(null)
     } catch (error) {
-      alert(error.message)
+      toast.error(error.message)
     } finally {
       setDeleting(null)
     }
@@ -72,6 +76,7 @@ export default function RetiroTable({ retiros, onDelete, isLoading }) {
   }
 
   return (
+    <>
     <Table>
       <TableHeader>
         <TableRow>
@@ -112,7 +117,7 @@ export default function RetiroTable({ retiros, onDelete, isLoading }) {
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  onClick={() => handleDelete(retiro.id)}
+                  onClick={() => setConfirmDeleteId(retiro.id)}
                   disabled={deleting === retiro.id}
                   title="Eliminar retiro"
                   aria-busy={deleting === retiro.id}
@@ -126,5 +131,15 @@ export default function RetiroTable({ retiros, onDelete, isLoading }) {
         ))}
       </TableBody>
     </Table>
+    <ConfirmDialog
+      open={!!confirmDeleteId}
+      onOpenChange={open => !open && setConfirmDeleteId(null)}
+      title="¿Eliminar este retiro?"
+      description="Esta acción no se puede deshacer."
+      confirmLabel="Eliminar"
+      onConfirm={handleDelete}
+      loading={deleting === confirmDeleteId}
+    />
+    </>
   )
 }
