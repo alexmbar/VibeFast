@@ -483,3 +483,31 @@ por Kapso) sí lo permite sin ese trámite.
   correo vía `alertarAdminsPorErroresCron`, no queda visible en `/admin`.
   Ninguno de los dos tiene endpoint ni función SQL propia todavía.
 
+- Plan compartido (invitar a otra persona a ver/editar el mismo conjunto de
+  gastos, ej. pareja). Detectado el 2026-08-26 explorando la demo de un
+  competidor (Zentavo): ellos lo resuelven invitando por correo a todo el
+  "plan" completo, sin roles granulares (solo un rol, dueño). No empezar
+  antes de 2027-02 — es una decisión de producto (¿roles de solo-lectura
+  vs edición? ¿cómo se identifica cada persona si ambas capturan por
+  WhatsApp desde números distintos hacia el mismo conjunto de gastos?) que
+  no vale la pena precipitar por ver que un competidor ya lo tiene.
+
+- Multi-moneda (varias cuentas en distintas divisas dentro del mismo
+  usuario, con conversión a una moneda base en reportes/patrimonio, como
+  lo resuelve Zentavo). Evaluado y descartado explícitamente el
+  2026-08-26 — no se contempla. La configuración de `moneda` en
+  `/configuraciones` (ver "Configuraciones" arriba) es solo la moneda de
+  despliegue de un usuario, no un sistema multi-divisa por cuenta; no
+  confundir ambos al retomar el tema.
+
+- Detector de "gastos hormiga": agrupar `gastos` por `tienda` (no por
+  categoría) dentro del periodo del reporte, y marcar como "hormiga" los
+  grupos con 3 o más compras. Confirmado el 2026-08-26 viendo la demo de
+  Zentavo (mismo criterio: agrupan por texto exacto del campo
+  "Negocio", umbral de repetición ≥3 — 2 compras a Uber no calificaron, 4 a
+  Oxxo sí). No requiere cambios al parseo de OpenAI Vision ni una tabla
+  nueva: es una vista agregada sobre `gastos` existentes (mismo patrón que
+  `gastos_por_categoria` en `036_reportes_funciones.sql` — función SQL,
+  nunca sumando/agrupando en JS sobre una lista paginada), expuesta como
+  una tarjeta o tabla nueva en `/reportes`.
+

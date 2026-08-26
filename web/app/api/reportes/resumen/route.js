@@ -20,14 +20,15 @@ export async function GET(request) {
   const desde = searchParams.get('desde') || null
   const hasta = searchParams.get('hasta') || null
 
-  const [resumen, porMes, porDia, porCategoria] = await Promise.all([
+  const [resumen, porMes, porDia, porCategoria, hormiga] = await Promise.all([
     supabase.rpc('gastos_ingresos_resumen', { p_desde: desde, p_hasta: hasta }),
     supabase.rpc('gastos_ingresos_por_mes', { p_desde: desde, p_hasta: hasta }),
     supabase.rpc('gastos_ingresos_por_dia', { p_desde: desde, p_hasta: hasta }),
     supabase.rpc('gastos_por_categoria', { p_desde: desde, p_hasta: hasta }),
+    supabase.rpc('gastos_hormiga', { p_desde: desde, p_hasta: hasta }),
   ])
 
-  const error = resumen.error || porMes.error || porDia.error || porCategoria.error
+  const error = resumen.error || porMes.error || porDia.error || porCategoria.error || hormiga.error
   if (error) {
     return NextResponse.json({ message: 'Error al calcular el resumen de reportes' }, { status: 500 })
   }
@@ -37,5 +38,6 @@ export async function GET(request) {
     porMes: (porMes.data || []).slice().reverse(),
     porDia: (porDia.data || []).slice().reverse(),
     porCategoria: porCategoria.data || [],
+    gastosHormiga: hormiga.data || [],
   })
 }

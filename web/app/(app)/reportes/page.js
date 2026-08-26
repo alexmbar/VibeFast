@@ -9,6 +9,7 @@ import GastoMensualChart from '@/components/reportes/GastoMensualChart'
 import CategoriaChart from '@/components/reportes/CategoriaChart'
 import TendenciaChart from '@/components/reportes/TendenciaChart'
 import GastosPorCorteTable from '@/components/reportes/GastosPorCorteTable'
+import GastosHormigaTable from '@/components/reportes/GastosHormigaTable'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,6 +30,7 @@ export default function ReportesPage() {
   const [porMes, setPorMes] = useState([])
   const [porDia, setPorDia] = useState([])
   const [porCategoria, setPorCategoria] = useState([])
+  const [gastosHormiga, setGastosHormiga] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [filtros, setFiltros] = useState({
     desde: '',
@@ -71,6 +73,7 @@ export default function ReportesPage() {
       setPorMes(data.porMes)
       setPorDia(data.porDia)
       setPorCategoria(data.porCategoria)
+      setGastosHormiga(data.gastosHormiga)
     } catch (error) {
       console.error('Error loading reportes:', error)
     } finally {
@@ -295,6 +298,15 @@ export default function ReportesPage() {
       <div className="w-full">
         <TendenciaChart data={dataTendencia} dataSecundaria={dataTendenciaIngreso} />
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Gastos hormiga</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <GastosHormigaTable gastos={gastosHormiga} />
+        </CardContent>
+      </Card>
       </>
       )}
     </div>
