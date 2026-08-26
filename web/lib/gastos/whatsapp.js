@@ -163,6 +163,7 @@ async function parsearMediaConOpenAI(supabase, userId, buffer, mediaContentType,
               type: 'image_url',
               image_url: {
                 url: `data:${mediaType};base64,${base64}`,
+                detail: 'high',
               },
             },
             {
@@ -170,7 +171,12 @@ async function parsearMediaConOpenAI(supabase, userId, buffer, mediaContentType,
               text: `Extrae información del gasto de esta imagen:
               - Monto (número entero en centavos, ej: 150050 = $1500.50)
               - Tienda/comercio (ej: OXXO, Starbucks)
-              - Fecha (YYYY-MM-DD, si no aparece usa hoy: ${hoyEnZona(zonaHoraria)})
+              - Fecha (YYYY-MM-DD): la fecha de la transacción suele estar
+                impresa cerca del pie del ticket, junto a la hora, casi
+                siempre en formato DD/MM/AA (ej: "11/08/26" = 2026-08-11,
+                día 11, mes 08). Léela con cuidado antes de usar el
+                fallback. Si de verdad no aparece en ningún lado, usa hoy:
+                ${hoyEnZona(zonaHoraria)}
               - Categoría (supermercado, restaurantes, cafeteria, transporte, gasolina, salud, farmacia, hogar, servicios, renta, educacion, entretenimiento, ropa, tecnologia, viajes, mascotas, regalos, impuestos, comisiones, otros)
               - Tipo de pago (efectivo, debito, credito, transferencia, domiciliado, vales, otro)
 

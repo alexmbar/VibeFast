@@ -429,3 +429,16 @@ por Kapso) sí lo permite sin ese trámite.
   meses de datos capturados (revisa la fecha del primer gasto/ingreso del
   usuario antes de construir esto).
 
+- Alertar por correo cuando aparezca un error en los logs de Vercel: mandar
+  un email (Resend) a todos los `profiles.role = 'admin'` por cada error que
+  aparezca en Vercel Logs, no solo en los crons. Requiere Log Drains de
+  Vercel, que solo existe en plan Pro/Enterprise — el proyecto está en
+  Hobby, así que queda bloqueado hasta hacer el upgrade. Cuando se
+  desbloquee: el drain apunta a un endpoint nuevo en esta misma app (ej.
+  `/api/webhooks/vercel-logs`), que filtra los eventos de nivel error/fatal
+  y dispara el correo con Resend — mismo patrón que
+  `alertarAdminsPorErroresCron` en `web/lib/admin/db.js`. Mientras tanto, la
+  cobertura de errores en flujos críticos (webhook de WhatsApp, crons) ya
+  usa ese mismo mecanismo caso por caso — ver "Alertar cuando el cron de
+  recurrencias falla" arriba.
+
