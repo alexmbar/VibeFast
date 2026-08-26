@@ -92,7 +92,7 @@ const config = {
   // -----------------------------------------------------------
   auth: {
     loginUrl: "/login",
-    afterLoginUrl: "/gastos",
+    afterLoginUrl: "/transacciones",
     afterLogoutUrl: "/",
     providers: ["google"], // se sincroniza con features.googleAuth / emailLogin
   },

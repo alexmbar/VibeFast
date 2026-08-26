@@ -81,6 +81,48 @@ Se calcula en la base de datos vía la función `cartera_saldo()` (no en
 JS: sumar una lista paginada en el cliente da un saldo incorrecto en
 cuanto el historial pasa esa página).
 
+## Transacciones (vista combinada)
+
+`/transacciones` reemplazó a `/gastos` y `/ingresos` como vista principal
+(decidido el 2026-08-26 tras explorar la demo de un competidor): una sola
+tabla que combina `gastos`, `ingresos` y `retiros`, ordenada por fecha,
+con monto en rojo (gasto, salida), verde (ingreso, entrada) o neutro
+(retiro, etiquetado "Transferencia" — un retiro no es un gasto ni un
+ingreso, ver "Retiros de efectivo y Cartera" arriba, así que no se
+pinta como ninguno de los dos). Filtro por tipo (`?tipo=gasto|ingreso|
+retiro` en la URL, usado por los redirects de abajo y por los enlaces
+de Dashboard/AlertasRecurrencias).
+
+**Las tres tablas siguen separadas.** Esto es solo una vista de
+lectura que las junta (`GET /api/transacciones`, mismo patrón que ya
+usaba `/api/cartera` para combinar retiros + gastos en efectivo: se
+combina y ordena en JS con un límite por fuente, no es un total exacto
+— para eso siguen las funciones SQL de `/reportes`). Presupuestos,
+recurrencias, `cartera_saldo()`, reportes y la captura por WhatsApp no
+cambiaron nada — cada uno le sigue hablando a su propia tabla. Crear y
+editar tampoco cambió: cada fila enlaza al formulario de su tipo
+(`/gastos/[id]/edit`, `/ingresos/[id]/edit`, `/retiros/[id]/edit`), y
+"Registrar" en `/transacciones` es un menú con las tres opciones, no un
+formulario nuevo.
+
+`/gastos` y `/ingresos` (las páginas índice) ahora son un `redirect()`
+a `/transacciones?tipo=...`, solo para no romper enlaces/bookmarks
+viejos. `/retiros` sigue existiendo aparte (no se tocó): retiros
+aparece en Transacciones además de en su propia página, no en lugar de
+ella.
+
+Esto no contradice "Todo lo visible dice gasto/gastos" (ver
+"Convenciones de UI" abajo) — esa regla sigue aplicando a la entidad
+`gasto` en sí (formularios, badges, columnas). "Transacciones" es
+solo el nombre de la vista que las junta, igual que "Cartera" ya
+nombra la vista de retiros + gastos en efectivo sin que esa tabla
+se llame "cartera".
+
+Pendiente, fuera de este alcance: no hay export CSV/JSON en
+`/transacciones` (`/gastos` sí lo tenía, vía `/api/gastos/export`,
+antes de este cambio). El endpoint sigue funcionando por URL directa,
+solo no está expuesto en esta UI.
+
 ## Recurrencias
 
 Motor compartido para ingresos y gastos que se repiten (nómina, renta,

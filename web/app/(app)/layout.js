@@ -42,7 +42,7 @@ export default async function AppLayout({ children }) {
         <div className="flex min-h-screen flex-col bg-background text-foreground">
           <header className="sticky top-0 z-40 h-14 border-b bg-card shadow-sm">
             <div className="flex h-full items-center justify-between px-4">
-              <Link href="/gastos" className="flex items-center gap-2 font-bold">
+              <Link href="/transacciones" className="flex items-center gap-2 font-bold">
                 <Logo className="size-7" />
                 {config.brand.logoText}
               </Link>

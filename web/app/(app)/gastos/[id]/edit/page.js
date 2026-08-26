@@ -30,7 +30,7 @@ export default function EditGastoPage() {
   }, [params.id])
 
   function handleSuccess() {
-    router.push('/gastos')
+    router.push('/transacciones')
   }
 
   function handleCancel() {

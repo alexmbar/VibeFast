@@ -8,11 +8,11 @@ const FIRST_LOGIN_WINDOW_MS = 10_000
 
 // Callback de OAuth. Supabase redirige aquí con un `code` que
 // intercambiamos por una sesión (cookies). Luego mandamos al
-// usuario a `next` (o /gastos por default).
+// usuario a `next` (o /transacciones por default).
 export async function GET(request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get("code")
-  const next = searchParams.get("next") ?? "/gastos"
+  const next = searchParams.get("next") ?? "/transacciones"
 
   if (code) {
     const supabase = await createClient()

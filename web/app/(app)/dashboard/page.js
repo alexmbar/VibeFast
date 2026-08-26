@@ -273,7 +273,7 @@ export default function DashboardPage() {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-bold tracking-tight">Gastos recientes</h2>
-              <Link href="/gastos" className="text-sm text-primary hover:underline">
+              <Link href="/transacciones?tipo=gasto" className="text-sm text-primary hover:underline">
                 Ver todos
               </Link>
             </div>
@@ -287,7 +287,7 @@ export default function DashboardPage() {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-bold tracking-tight">Ingresos recientes</h2>
-              <Link href="/ingresos" className="text-sm text-primary hover:underline">
+              <Link href="/transacciones?tipo=ingreso" className="text-sm text-primary hover:underline">
                 Ver todos
               </Link>
             </div>

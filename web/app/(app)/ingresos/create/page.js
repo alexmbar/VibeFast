@@ -7,7 +7,7 @@ export default function CreateIngresoPage() {
   const router = useRouter()
 
   function handleSuccess() {
-    router.push('/ingresos')
+    router.push('/transacciones')
   }
 
   function handleCancel() {

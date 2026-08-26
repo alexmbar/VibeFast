@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Wallet, TrendingUp, Landmark, BarChart3, Bot, Repeat, PiggyBank } from "lucide-react"
+import { LayoutDashboard, ArrowLeftRight, Landmark, BarChart3, Bot, Repeat, PiggyBank } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { obtenerAlertasRecurrencias } from "@/lib/recurrencias/alertas"
 import { obtenerAlertasPresupuestos } from "@/lib/presupuestos/alertas"
@@ -13,8 +13,7 @@ import { obtenerAlertasPresupuestos } from "@/lib/presupuestos/alertas"
 // que NAV vive aquí en vez de recibirse por props.
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/gastos", label: "Gastos", icon: Wallet },
-  { href: "/ingresos", label: "Ingresos", icon: TrendingUp },
+  { href: "/transacciones", label: "Transacciones", icon: ArrowLeftRight },
   { href: "/recurrencias", label: "Recurrencias", icon: Repeat },
   { href: "/presupuestos", label: "Presupuestos", icon: PiggyBank },
   { href: "/cartera", label: "Cartera", icon: Landmark },

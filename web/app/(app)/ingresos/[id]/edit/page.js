@@ -30,7 +30,7 @@ export default function EditIngresoPage() {
   }, [params.id])
 
   function handleSuccess() {
-    router.push('/ingresos')
+    router.push('/transacciones')
   }
 
   function handleCancel() {

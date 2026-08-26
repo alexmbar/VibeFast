@@ -34,7 +34,7 @@ export default async function AdminLayout({ children }) {
               Admin
             </Link>
             <div className="flex items-center gap-3">
-              <Link href="/gastos" className="text-sm text-base-content/70 hover:underline">
+              <Link href="/transacciones" className="text-sm text-base-content/70 hover:underline">
                 Volver a la app
               </Link>
               <UserMenu user={user} />

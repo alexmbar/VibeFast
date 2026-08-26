@@ -7,7 +7,7 @@ export default function CreateGastoPage() {
   const router = useRouter()
 
   function handleSuccess() {
-    router.push('/gastos')
+    router.push('/transacciones')
   }
 
   function handleCancel() {

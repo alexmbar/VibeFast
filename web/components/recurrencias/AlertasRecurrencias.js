@@ -42,7 +42,7 @@ export default function AlertasRecurrencias() {
               <ul className="space-y-0.5 text-muted-foreground">
                 {alertas.pendientes.slice(0, MAX_ITEMS).map((p) => (
                   <li key={`${p.tipo}-${p.id}`}>
-                    <Link href={p.tipo === 'gasto' ? '/gastos' : '/ingresos'} className="hover:text-foreground hover:underline">
+                    <Link href={`/transacciones?tipo=${p.tipo === 'gasto' ? 'gasto' : 'ingreso'}`} className="hover:text-foreground hover:underline">
                       {formatMonto(p.monto)} · {p.tipo === 'gasto' ? 'gasto' : 'ingreso'} · {p.fecha}
                     </Link>
                   </li>

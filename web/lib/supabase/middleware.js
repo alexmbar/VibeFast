@@ -68,7 +68,7 @@ export async function updateSession(request) {
   // /admin (páginas) y /api/admin (endpoints) son zona del dueño del
   // SaaS, no de un usuario cualquiera. Sin sesión, a login (o 401 si es
   // API: un redirect ahí rompe al caller, que espera JSON). Con sesión
-  // pero sin role admin, a /gastos / 403 (nunca "no autorizado" en la
+  // pero sin role admin, a config.auth.afterLoginUrl / 403 (nunca "no autorizado" en la
   // página: eso confirmaría que la ruta existe).
   if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
     const esApi = pathname.startsWith("/api/admin")
