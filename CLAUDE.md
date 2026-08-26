@@ -442,3 +442,35 @@ por Kapso) sí lo permite sin ese trámite.
   usa ese mismo mecanismo caso por caso — ver "Alertar cuando el cron de
   recurrencias falla" arriba.
 
+- Panel del dueño (`/admin`): el backend ya está construido — rol `admin`
+  en `profiles` con trigger anti-auto-promoción
+  (`027_admin_role_y_estado_cuenta.sql`), tablas `integraciones_log`
+  (`029`) y `uso_openai` (`030`), funciones agregadas
+  `admin_metricas_negocio`/`admin_costos_openai_diario`/
+  `admin_costos_openai_por_usuario` (`031_admin_funciones.sql`,
+  `SECURITY DEFINER`, ejecución restringida a `service_role`), y los
+  endpoints `/api/admin/{usuarios,metricas,integraciones,costos}` sobre
+  `web/lib/admin/db.js`. `web/app/admin/page.js` sigue siendo un
+  placeholder — falta la UI que consuma esos cuatro endpoints:
+  - Cards de métricas de negocio (usuarios totales, altas de la semana,
+    activos 30d, gastos/ingresos del mes).
+  - Tabla de usuarios (ordenable, mismo patrón que el resto de la app)
+    con acción de suspender/reactivar cuenta (`actualizarEstadoCuenta`,
+    ya audita en `admin_audit_log`) y detalle por usuario — que nunca
+    debe mostrar montos, categorías, tiendas ni bancos del usuario, solo
+    conteos y costo de OpenAI (frontera ya documentada en
+    `obtenerUsuario` en `db.js`).
+  - Costos de OpenAI por día y por usuario.
+  - Salud de integraciones (`integraciones_log`) filtrable por tipo/
+    nivel/resuelto: errores de webhook WhatsApp, cron de recurrencias,
+    OpenAI Vision, costo anómalo.
+
+  Dos huecos adicionales detectados al revisar esto (no bloquean la UI,
+  pero conviene resolverlos en el mismo esfuerzo): no hay manera de ver
+  en el panel si una plantilla de WhatsApp (ej. `presupuesto_alerta`)
+  sigue pendiente de aprobación en Meta/Kapso — hoy solo se infiere de
+  fallos repetidos en `integraciones_log`; y no hay vista de la última
+  corrida de cada cron (recurrencias, recordatorio de pago) — esa
+  información solo llega por correo vía `alertarAdminsPorErroresCron`,
+  no queda visible en `/admin`.
+

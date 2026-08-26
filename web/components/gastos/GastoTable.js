@@ -24,6 +24,7 @@ const COLUMNAS = [
   { key: 'tienda', label: 'Tienda' },
   { key: 'categoria', label: 'Categoría' },
   { key: 'tipo_pago', label: 'Tipo de pago' },
+  { key: 'banco', label: 'Banco' },
   { key: 'monto', label: 'Monto', className: 'text-right' },
 ]
 
@@ -81,9 +82,9 @@ export default function GastoTable({ gastos, onDelete, onUpdate, isLoading }) {
     }
   }
 
-  // Confirma una fila generada por una recurrencia (monto_confirmado=false):
-  // un PATCH vacío marca la fila como revisada sin tocar el monto (ver
-  // web/app/api/gastos/[id]/route.js).
+  // Confirma una fila pendiente (monto_confirmado o banco_confirmado en
+  // false): un PATCH vacío marca la fila como revisada sin tocar sus datos
+  // (ver web/app/api/gastos/[id]/route.js).
   async function handleConfirm(id) {
     setConfirming(id)
     try {
@@ -145,6 +146,14 @@ export default function GastoTable({ gastos, onDelete, onUpdate, isLoading }) {
             <TableCell className="text-sm">{gasto.tienda || '-'}</TableCell>
             <TableCell className="text-sm">{CATEGORIA_LABELS[gasto.categoria]}</TableCell>
             <TableCell className="text-sm">{TIPO_PAGO_LABELS[gasto.tipo_pago]}</TableCell>
+            <TableCell className="text-sm">
+              <div className="flex flex-col gap-1">
+                <span>{gasto.banco || '-'}</span>
+                {gasto.banco_confirmado === false && (
+                  <Badge variant="outline" className="text-muted-foreground w-fit">Pendiente</Badge>
+                )}
+              </div>
+            </TableCell>
             <TableCell className="text-right">
               <div className="flex flex-col items-end gap-1">
                 <span className="font-mono font-semibold tabular-nums">{formatMonto(gasto.monto)}</span>
@@ -155,13 +164,13 @@ export default function GastoTable({ gastos, onDelete, onUpdate, isLoading }) {
             </TableCell>
             <TableCell>
               <div className="flex gap-1 justify-center">
-                {gasto.monto_confirmado === false && (
+                {(gasto.monto_confirmado === false || gasto.banco_confirmado === false) && (
                   <Button
                     variant="ghost"
                     size="icon-sm"
                     onClick={() => handleConfirm(gasto.id)}
                     disabled={confirming === gasto.id}
-                    title="Confirmar monto"
+                    title="Confirmar"
                     aria-busy={confirming === gasto.id}
                   >
                     {confirming === gasto.id ? <Loader2 className="animate-spin" /> : <Check />}

@@ -79,8 +79,10 @@ export async function PATCH(request, { params }) {
     ...body,
     // Cualquier PATCH implica que el usuario revisó la fila -- así se
     // "confirma" una fila generada por una recurrencia sin necesitar un
-    // endpoint aparte (ver web/lib/recurrencias).
+    // endpoint aparte (ver web/lib/recurrencias), y también un banco sin
+    // matchear automáticamente por WhatsApp (ver web/lib/gastos/whatsapp.js).
     monto_confirmado: true,
+    banco_confirmado: true,
   }
 
   if (body.monto || body.fecha || body.categoria || body.tipo_pago || body.banco_id !== undefined) {

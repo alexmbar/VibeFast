@@ -84,6 +84,26 @@ export async function crearGastoDesdeWhatsApp(
       gasto.tipo_pago = 'efectivo'
     }
 
+    // Intentar vincular la tarjeta/cuenta con el catalogo de bancos del
+    // usuario, comparando los ultimos digitos que leyo Vision del ticket
+    // contra bancos.alias. Solo aplica a capturas con foto/PDF (unico
+    // caso donde tenemos digitos que comparar) y tipo_pago debito/credito.
+    // Sin match exacto no se adivina el banco -- el gasto queda sin
+    // banco_id y marcado pendiente (banco_confirmado=false) para revisar
+    // a mano en /gastos, mismo patron que monto_confirmado.
+    let bancoId = null
+    let bancoNombre = null
+    let bancoConfirmado = true
+    if (mediaBuffer && (gasto.tipo_pago === 'debito' || gasto.tipo_pago === 'credito')) {
+      const banco = await matchearBanco(supabase, userId, gasto.tipo_pago, gasto.ultimosDigitos)
+      if (banco) {
+        bancoId = banco.id
+        bancoNombre = banco.nombre
+      } else {
+        bancoConfirmado = false
+      }
+    }
+
     // Insertar en Supabase
     const { data, error } = await supabase
       .from('gastos')
@@ -94,6 +114,9 @@ export async function crearGastoDesdeWhatsApp(
         categoria: gasto.categoria,
         tipo_pago: gasto.tipo_pago,
         tienda: gasto.tienda || null,
+        banco_id: bancoId,
+        banco: bancoNombre,
+        banco_confirmado: bancoConfirmado,
         notas: gasto.notas || `Capturado por WhatsApp: ${texto}`,
       })
       .select()
@@ -179,9 +202,12 @@ async function parsearMediaConOpenAI(supabase, userId, buffer, mediaContentType,
                 ${hoyEnZona(zonaHoraria)}
               - Categoría (supermercado, restaurantes, cafeteria, transporte, gasolina, salud, farmacia, hogar, servicios, renta, educacion, entretenimiento, ropa, tecnologia, viajes, mascotas, regalos, impuestos, comisiones, otros)
               - Tipo de pago (efectivo, debito, credito, transferencia, domiciliado, vales, otro)
+              - Últimos dígitos de la tarjeta o cuenta, si aparecen en el
+                ticket (ej. "CUENTA: **25" o "TARJETA ****4532" -> "25" o
+                "4532"). null si no aparecen o si el pago fue en efectivo.
 
               Responde SOLO en JSON sin markdown:
-              {"monto": 150050, "tienda": "OXXO", "fecha": "2025-08-10", "categoria": "otros", "tipo_pago": "efectivo"}`,
+              {"monto": 150050, "tienda": "OXXO", "fecha": "2025-08-10", "categoria": "otros", "tipo_pago": "efectivo", "ultimos_digitos": null}`,
             },
           ],
         },
@@ -207,6 +233,7 @@ async function parsearMediaConOpenAI(supabase, userId, buffer, mediaContentType,
       fecha: json.fecha,
       categoria: json.categoria,
       tipo_pago: json.tipo_pago,
+      ultimosDigitos: json.ultimos_digitos || null,
     }
   } catch (error) {
     console.error('Error en OpenAI Vision:', error)
@@ -337,4 +364,30 @@ function inferirCategoria(tiendaTexto) {
   if (/comision|banco|transferencia/.test(lower)) return 'comisiones'
 
   return null
+}
+
+// Busca un banco del catalogo del usuario cuyo alias termine en los mismos
+// digitos que se leyeron del ticket (ej. alias "4532" hace match con
+// ultimosDigitos "32" o "4532", no con "532" leido de otra tarjeta).
+// Requiere match unico: si hay cero o mas de un banco candidato, no
+// asigna nada -- banco_id es FK, nunca se adivina entre varias opciones.
+async function matchearBanco(supabase, userId, tipoPago, ultimosDigitos) {
+  const digitos = (ultimosDigitos || '').replace(/\D/g, '')
+  if (!digitos) return null
+
+  const { data: bancos } = await supabase
+    .from('bancos')
+    .select('id, nombre, alias')
+    .eq('user_id', userId)
+    .eq('tipo', tipoPago)
+    .eq('activo', true)
+
+  if (!bancos || bancos.length === 0) return null
+
+  const coincidencias = bancos.filter(banco => {
+    const aliasDigitos = (banco.alias || '').replace(/\D/g, '')
+    return aliasDigitos && aliasDigitos.length >= digitos.length && aliasDigitos.endsWith(digitos)
+  })
+
+  return coincidencias.length === 1 ? coincidencias[0] : null
 }
