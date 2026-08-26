@@ -134,7 +134,7 @@ enlazadas por `recurrencia_id`.
 
 El `monto_default` de la regla es solo un sugerido, no el monto real de
 cada ocurrencia (nómina/renta pueden variar): cada fila generada nace con
-`monto_confirmado = false` — badge "Pendiente" en `/gastos` e `/ingresos` —
+`monto_confirmado = false` — badge "Pendiente" en `/transacciones` —
 hasta que el usuario la revisa. Cualquier `PATCH` manual sobre la fila
 (editarla o el botón "Confirmar" de la tabla, que no toca el monto) la
 marca como confirmada.
@@ -326,7 +326,8 @@ por Kapso) sí lo permite sin ese trámite.
    - Foto/PDF: OpenAI Vision extrae datos del ticket (descargado de Kapso con la API key)
 6. Se inserta en `gastos` o `retiros` según corresponda, con validaciones de BD
 7. Se manda una confirmación (o el mensaje de error) de vuelta por WhatsApp,
-   y aparece inmediatamente en `/gastos` o `/retiros`
+   y aparece inmediatamente en `/transacciones` (o `/retiros`, que además
+   conserva su propia vista)
 
 **Setup requerido:**
 - Teléfono del usuario debe estar en `profiles.phone` (formato: +52XXXXXXXXXX)
@@ -444,7 +445,8 @@ por Kapso) sí lo permite sin ese trámite.
 
 - ~~Control de ingresos~~ — resuelto: captura manual (monto, fecha,
   categoría/nota, tabla `ingresos`, migración `019_ingresos.sql`), vista
-  `/ingresos`, balance neto en dashboard (`balance_neto()`,
+  `/ingresos` (fusionada después en `/transacciones`, ver esa sección),
+  balance neto en dashboard (`balance_neto()`,
   `020_balance_neto_function.sql`), y la modalidad recurrente ("nómina"
   cada viernes o quincenal, monto variable con default) vía el motor de
   recurrencia compartido — ver "Recurrencias" arriba.
@@ -542,14 +544,24 @@ por Kapso) sí lo permite sin ese trámite.
   despliegue de un usuario, no un sistema multi-divisa por cuenta; no
   confundir ambos al retomar el tema.
 
-- Detector de "gastos hormiga": agrupar `gastos` por `tienda` (no por
-  categoría) dentro del periodo del reporte, y marcar como "hormiga" los
-  grupos con 3 o más compras. Confirmado el 2026-08-26 viendo la demo de
-  Zentavo (mismo criterio: agrupan por texto exacto del campo
-  "Negocio", umbral de repetición ≥3 — 2 compras a Uber no calificaron, 4 a
-  Oxxo sí). No requiere cambios al parseo de OpenAI Vision ni una tabla
-  nueva: es una vista agregada sobre `gastos` existentes (mismo patrón que
-  `gastos_por_categoria` en `036_reportes_funciones.sql` — función SQL,
-  nunca sumando/agrupando en JS sobre una lista paginada), expuesta como
-  una tarjeta o tabla nueva en `/reportes`.
+- ~~Detector de "gastos hormiga"~~ — resuelto el 2026-08-26: agrupa
+  `gastos` por `tienda` (no por categoría) dentro del periodo del
+  reporte y marca como "hormiga" los grupos con 3 o más compras — mismo
+  criterio detectado viendo la demo de un competidor (Zentavo: agrupan
+  por texto exacto del campo "Negocio", umbral de repetición ≥3). No
+  necesitó cambios al parseo de OpenAI Vision ni tabla nueva: función
+  SQL `gastos_hormiga()` (`041_gastos_hormiga_function.sql`, mismo
+  patrón que `gastos_por_categoria`), expuesta en `/api/reportes/
+  resumen` y una card nueva (`GastosHormigaTable`) al final de
+  `/reportes`.
+
+- ~~Unificar Gastos/Ingresos en una vista "Transacciones"~~ — resuelto
+  el 2026-08-26, también a raíz de explorar la demo de Zentavo (ver
+  "Transacciones (vista combinada)" arriba para el detalle completo).
+  Resumen: `/transacciones` combina `gastos`+`ingresos`+`retiros` en
+  una sola tabla (rojo/verde/neutro), las tres tablas siguen separadas,
+  `/gastos` y `/ingresos` quedaron como `redirect()`. Pendiente fuera
+  de este alcance: no hay export CSV/JSON en `/transacciones` (sí lo
+  tenía `/gastos` vía `/api/gastos/export`, que sigue funcionando por
+  URL directa, solo no expuesto en esta UI).
 

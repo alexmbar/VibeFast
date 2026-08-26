@@ -40,6 +40,7 @@ export default function UserMenu({ user, className }) {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem render={<Link href="/profile" />}>Perfil</DropdownMenuItem>
+        <DropdownMenuItem render={<Link href="/bancos" />}>Bancos</DropdownMenuItem>
         <DropdownMenuItem render={<Link href="/configuraciones" />}>Configuraciones</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" className="p-0">
