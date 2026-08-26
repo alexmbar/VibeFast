@@ -13,10 +13,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 // Formato E.164 simplificado: + seguido de 10 a 15 dígitos.
 const PHONE_RE = /^\+\d{10,15}$/
 
-// Paso 1 del wizard de onboarding: sin teléfono registrado, la captura
-// por WhatsApp no puede identificar al usuario
+// Único paso del wizard de onboarding: sin teléfono registrado, la
+// captura por WhatsApp no puede identificar al usuario
 // (web/app/api/webhooks/whatsapp/route.js busca por profiles.phone).
-// Al guardar, avanza a 'carga_inicial' (ver web/components/onboarding/OnboardingWizard.js).
+// Carga inicial / bancos / recurrencias ya no son pantallas de wizard
+// -- son opcionales y viven en un banner descartable del dashboard
+// (OnboardingBanner) en vez de bloquear la entrada a la app.
 export default function PasoTelefono({ userId }) {
   const router = useRouter()
   const supabase = createClient()
@@ -38,7 +40,7 @@ export default function PasoTelefono({ userId }) {
 
     const { error: updateError } = await supabase
       .from("profiles")
-      .update({ phone: trimmed, onboarding_step: "carga_inicial" })
+      .update({ phone: trimmed, onboarding_step: "completado" })
       .eq("id", userId)
 
     if (updateError) {

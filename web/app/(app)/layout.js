@@ -77,7 +77,7 @@ export default async function AppLayout({ children }) {
               </div>
             </div>
           ) : (
-            <OnboardingWizard userId={user.id} onboardingStep={profile?.onboarding_step || "telefono"} />
+            <OnboardingWizard userId={user.id} />
           )}
         </div>
         <Toaster />

@@ -348,6 +348,43 @@ por Kapso) sí lo permite sin ese trámite.
 - `web/lib/retiros/whatsapp.js` — parseo de texto y creación de retiros
 - `web/app/(app)/profile/page.js` — donde usuario agrega su teléfono
 
+## Onboarding
+
+Un solo paso obligatorio: registrar el teléfono (`PasoTelefono.js`) —
+sin eso, el webhook de WhatsApp no puede identificar al usuario, así
+que no puede ser opcional. Bloquea el resto de la app hasta
+completarse (`(app)/layout.js`, vía `profiles.onboarding_step`: solo
+`'telefono'` o `'completado'`, ver `042_onboarding_simplificado.sql`).
+
+Carga inicial de efectivo, bancos y recurrencias **ya no son pasos de
+wizard** (lo eran hasta el 2026-08-26): son opcionales y viven en
+`OnboardingBanner` (`web/components/onboarding/OnboardingBanner.js`),
+una sola línea descartable en `/dashboard`, no pantallas completas. Se
+decidió así tras notar que un competidor (Zentavo) no tiene wizard
+secuencial — cada paso del wizard viejo ya tenía botón de "omitir",
+así que el problema real no era captura forzada, era tener que pasar
+por 3 pantallas aunque fuera solo para saltarlas. El banner infiere
+qué falta directo de los datos (¿hay un retiro con
+`es_carga_inicial`? ¿al menos un banco? ¿al menos una recurrencia?) —
+sin columnas de progreso nuevas — y una vez cerrado
+(`profiles.onboarding_banner_dismissed`) no vuelve a aparecer, ni
+aunque falte algo.
+
+La carga inicial de efectivo sigue siendo *solo* por WhatsApp (no hay
+formulario web para `es_carga_inicial`, ver "Retiros de efectivo y
+Cartera" arriba): antes el mensaje se identificaba porque el usuario
+estaba en el paso `onboarding_step = 'carga_inicial'` del wizard; ahora
+que ese paso ya no existe, el webhook (`web/app/api/webhooks/
+whatsapp/route.js`) lo reconoce por forma del mensaje — un texto que
+es *solo un número* (sin tienda, sin prefijo "retiro") y el usuario
+todavía no tiene una carga inicial — así que se puede mandar en
+cualquier momento, no solo durante el registro. Ese cambio también
+importa porque el mensaje de carga inicial servía de paso para
+confirmar que el teléfono capturado sí funciona (round-trip real por
+WhatsApp) — al dejar de ser obligatorio, esa validación implícita
+también dejó de ser obligatoria; no hay una verificación explícita de
+"tu WhatsApp funciona" en ningún otro lado todavía.
+
 ## TODO
 - Incluir carga y lectura de estados de cuenta "https://vibe-fast-web-omega.vercel.app/docs/recetas/chatbot-con-rag"
 
@@ -564,4 +601,26 @@ por Kapso) sí lo permite sin ese trámite.
   de este alcance: no hay export CSV/JSON en `/transacciones` (sí lo
   tenía `/gastos` vía `/api/gastos/export`, que sigue funcionando por
   URL directa, solo no expuesto en esta UI).
+
+- ~~Simplificar el wizard de onboarding a un solo paso obligatorio~~ —
+  resuelto el 2026-08-26, otra vez a raíz de la demo de Zentavo (no
+  tiene wizard secuencial). Ver "Onboarding" arriba para el detalle
+  completo. Resumen: solo "teléfono" sigue bloqueando; carga inicial,
+  bancos y recurrencias se movieron de pantallas de wizard a un banner
+  descartable en `/dashboard` (`OnboardingBanner`), sin nueva columna
+  de progreso — se infiere de datos reales. Se evaluaron dos opciones
+  en mockup (banner discreto vs. tarjeta destacada con checklist); se
+  eligió el banner por menor fricción.
+
+- Verificación explícita de que el WhatsApp registrado funciona. Antes
+  era un efecto secundario del paso "carga inicial" del wizard (para
+  avanzar, el usuario tenía que mandar un mensaje real, confirmando el
+  round-trip); al dejar de ser obligatorio (ver "Onboarding" arriba),
+  esa validación implícita también se volvió opcional. Hoy no hay
+  ninguna señal en la UI de "tu número no ha recibido ningún mensaje
+  todavía" si alguien se registra y nunca escribe. Posible solución:
+  el banner podría incluir ese chequeo (`profiles.whatsapp_confirmado_at
+  IS NULL`) como un cuarto punto, ya que ese campo ya existe y se llena
+  en el primer mensaje recibido (ver `confirmarPrimerMensaje` en el
+  webhook).
 

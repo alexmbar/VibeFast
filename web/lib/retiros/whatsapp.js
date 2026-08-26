@@ -142,11 +142,12 @@ export async function crearRetiroDesdeWhatsApp(supabase, userId, texto, zonaHora
   }
 }
 
-// Crear o corregir la carga inicial de efectivo del wizard de onboarding
-// (paso profiles.onboarding_step = 'carga_inicial'). Se guarda como un
+// Crear o corregir la carga inicial de efectivo (disparada por el webhook
+// de WhatsApp cuando el mensaje es solo un número y el usuario todavía no
+// tiene una, ver web/app/api/webhooks/whatsapp/route.js). Se guarda como un
 // retiro sin banco (es_carga_inicial=true, ver 024_onboarding_wizard.sql):
-// mientras el usuario no confirme el monto en el wizard, puede corregirlo
-// reenviando otro mensaje -- por eso hace upsert manual en vez de insert.
+// como puede corregirse reenviando otro número mientras no se confirme
+// desde la UI, hace upsert manual en vez de insert.
 export async function crearCargaInicialDesdeWhatsApp(supabase, userId, texto, zonaHoraria = ZONA_HORARIA_DEFAULT) {
   try {
     const monto = extraerMonto(texto)

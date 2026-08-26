@@ -40,7 +40,7 @@ export async function POST(request) {
     )
     const { data: user } = await supabase
       .from('profiles')
-      .select('id, full_name, whatsapp_confirmado_at, onboarding_step, zona_horaria, moneda')
+      .select('id, full_name, whatsapp_confirmado_at, zona_horaria, moneda')
       .eq('phone', userPhone)
       .single()
 
@@ -70,14 +70,27 @@ export async function POST(request) {
       body = transcripcion
     }
 
-    // Mientras el usuario esté en el paso de carga inicial del wizard de
-    // onboarding, cualquier mensaje entrante se interpreta como el efectivo
-    // que tiene contado (sin prefijo ni banco), no como gasto/retiro normal.
-    // El wizard avanza el paso cuando el usuario confirma el monto en la UI.
-    if (user.onboarding_step === 'carga_inicial') {
-      const resultado = await crearCargaInicialDesdeWhatsApp(supabase, user.id, body, user.zona_horaria)
-      await responderCargaInicialWhatsApp(userPhone, resultado, transcripcion, user.moneda)
-      return NextResponse.json({ success: resultado.success })
+    // Un mensaje que es solo un número (sin tienda, sin "retiro") se
+    // interpreta como la carga inicial de efectivo -- mismo criterio que
+    // el wizard le pedía al usuario ("solo el número, ej. '3000'"), pero
+    // ya no depende de estar en un paso de onboarding (ver
+    // 042_onboarding_simplificado.sql): se puede mandar en cualquier
+    // momento mientras no exista todavía una carga inicial. Un gasto real
+    // casi siempre trae tienda ("500 oxxo"), así que la colisión es rara.
+    const esSoloNumero = /^\$?\s*\d{1,3}(,\d{3})*(\.\d{1,2})?\s*$/.test(body.trim())
+    if (esSoloNumero) {
+      const { data: cargaExistente } = await supabase
+        .from('retiros')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('es_carga_inicial', true)
+        .maybeSingle()
+
+      if (!cargaExistente) {
+        const resultado = await crearCargaInicialDesdeWhatsApp(supabase, user.id, body, user.zona_horaria)
+        await responderCargaInicialWhatsApp(userPhone, resultado, transcripcion, user.moneda)
+        return NextResponse.json({ success: resultado.success })
+      }
     }
 
     // Un mensaje que empieza con "retiro" se captura como retiro de

@@ -60,6 +60,7 @@ export async function GET() {
       fecha: r.fecha,
       monto: r.monto,
       descripcion: r.es_carga_inicial ? 'Carga inicial' : `Retiro — ${r.banco?.nombre || 'Banco'}`,
+      esCargaInicial: r.es_carga_inicial,
     })),
     ...gastosResult.data.map(g => ({
       id: `gasto-${g.id}`,

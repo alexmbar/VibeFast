@@ -12,6 +12,7 @@ import CategoriaChart from '@/components/reportes/CategoriaChart'
 import TendenciaChart from '@/components/reportes/TendenciaChart'
 import GastoTable from '@/components/gastos/GastoTable'
 import IngresoTable from '@/components/ingresos/IngresoTable'
+import OnboardingBanner from '@/components/onboarding/OnboardingBanner'
 import AlertasRecurrencias from '@/components/recurrencias/AlertasRecurrencias'
 import AlertasPresupuestos from '@/components/presupuestos/AlertasPresupuestos'
 import { Button } from '@/components/ui/button'
@@ -195,6 +196,7 @@ export default function DashboardPage() {
         </Button>
       </div>
 
+      <OnboardingBanner />
       <AlertasRecurrencias />
       <AlertasPresupuestos />
 
